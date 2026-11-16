@@ -1,0 +1,4 @@
+// Server the device build talks to. Leave empty here; set it in Server.local.xcconfig (git-ignored).
+// xcconfig treats "//" as a comment, so write URLs as https:/$()/host:port
+PHONOPATH_SERVER_URL =
+#include? "Server.local.xcconfig"

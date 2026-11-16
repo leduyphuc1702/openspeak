@@ -1,0 +1,14 @@
+backend/.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+ios/**/xcuserdata/
+ios/build/
+.DS_Store
+backend/calib/
+backend/cache/
+backend/data/
+ios/PhonoPath.xcodeproj/
+ios/Config/Server.local.xcconfig
+*.ipa
+.env

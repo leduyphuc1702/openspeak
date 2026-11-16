@@ -1,0 +1,272 @@
+{
+  "dataset": "speechocean762 (OpenSLR 101, CC BY 4.0), adult speakers only; outside test: L2-ARCTIC manual subset (CC BY-NC 4.0)",
+  "model": "mrrubino/wav2vec2-large-xlsr-53-l2-arctic-phoneme",
+  "train_utterances": 1339,
+  "test_utterances": 1216,
+  "feature": "lpp",
+  "gop_scale": 64.0,
+  "gop_weight": 1.0,
+  "display_gain": 3.5258,
+  "display_offset": -254.804,
+  "good_threshold": 89.0,
+  "test_phone_score_percentiles_10_50_90": [
+    69.4,
+    97.4,
+    97.8
+  ],
+  "test_expert_phone_mean_x50": 92.7,
+  "train_phone_pcc_by_feature": {
+    "gop": {
+      "pcc": 0.57,
+      "scale": 64.0,
+      "weight": 1.0
+    },
+    "lpp": {
+      "pcc": 0.585,
+      "scale": 64.0,
+      "weight": 1.0
+    },
+    "margin": {
+      "pcc": 0.515,
+      "scale": 12.0,
+      "weight": 0.9
+    }
+  },
+  "train_balanced_accuracy_at_threshold": 0.784,
+  "test_before": {
+    "phone_pcc": 0.463,
+    "word_pcc": 0.422,
+    "utterance_pcc": 0.668
+  },
+  "test_after": {
+    "phone_pcc": 0.548,
+    "word_pcc": 0.501,
+    "utterance_pcc": 0.694
+  },
+  "test_components_default": {
+    "fluency_vs_fluency_pcc": 0.699,
+    "intonation_vs_prosodic_pcc": 0.012,
+    "overall_vs_total_pcc": 0.668
+  },
+  "l2arctic": {
+    "phones": 56858,
+    "mispronounced_share": 0.14,
+    "auc_all": 0.939,
+    "auc_vietnamese": 0.971,
+    "vietnamese_phones": 9630,
+    "vietnamese_by_phone": {
+      "Z": {
+        "n": 324,
+        "error_rate": 0.73,
+        "auc": 0.934
+      },
+      "DH": {
+        "n": 291,
+        "error_rate": 0.71,
+        "auc": 0.902
+      },
+      "ER": {
+        "n": 247,
+        "error_rate": 0.6,
+        "auc": 0.99
+      },
+      "TH": {
+        "n": 57,
+        "error_rate": 0.56,
+        "auc": 0.989
+      },
+      "D": {
+        "n": 481,
+        "error_rate": 0.47,
+        "auc": 0.975
+      },
+      "V": {
+        "n": 224,
+        "error_rate": 0.46,
+        "auc": 0.981
+      },
+      "L": {
+        "n": 415,
+        "error_rate": 0.4,
+        "auc": 0.994
+      },
+      "SH": {
+        "n": 108,
+        "error_rate": 0.36,
+        "auc": 0.999
+      },
+      "T": {
+        "n": 602,
+        "error_rate": 0.34,
+        "auc": 0.962
+      },
+      "AA": {
+        "n": 122,
+        "error_rate": 0.32,
+        "auc": 0.876
+      },
+      "R": {
+        "n": 409,
+        "error_rate": 0.31,
+        "auc": 0.981
+      },
+      "P": {
+        "n": 210,
+        "error_rate": 0.3,
+        "auc": 0.968
+      },
+      "S": {
+        "n": 416,
+        "error_rate": 0.24,
+        "auc": 0.976
+      },
+      "AH": {
+        "n": 837,
+        "error_rate": 0.22,
+        "auc": 0.945
+      },
+      "IH": {
+        "n": 562,
+        "error_rate": 0.22,
+        "auc": 0.927
+      },
+      "AE": {
+        "n": 206,
+        "error_rate": 0.2,
+        "auc": 0.974
+      },
+      "K": {
+        "n": 254,
+        "error_rate": 0.17,
+        "auc": 0.979
+      },
+      "OW": {
+        "n": 160,
+        "error_rate": 0.16,
+        "auc": 0.953
+      },
+      "F": {
+        "n": 219,
+        "error_rate": 0.12,
+        "auc": 1.0
+      },
+      "EY": {
+        "n": 183,
+        "error_rate": 0.11,
+        "auc": 0.949
+      },
+      "EH": {
+        "n": 270,
+        "error_rate": 0.1,
+        "auc": 0.97
+      },
+      "N": {
+        "n": 624,
+        "error_rate": 0.09,
+        "auc": 0.979
+      },
+      "IY": {
+        "n": 360,
+        "error_rate": 0.06,
+        "auc": 0.982
+      }
+    },
+    "detect_at_threshold": {
+      "precision": 0.81,
+      "recall": 0.52,
+      "f1": 0.633
+    }
+  },
+  "native_librispeech": {
+    "utterances": 359,
+    "phones": 10865,
+    "flagged_share": 0.084,
+    "median_utterance_score": 95.3
+  },
+  "model_comparison": [
+    {
+      "model": "mrrubino/wav2vec2-large-xlsr-53-l2-arctic-phoneme",
+      "feature": "lpp",
+      "phone_pcc": 0.548,
+      "word_pcc": 0.501,
+      "utterance_pcc": 0.694,
+      "fluency_pcc": 0.699,
+      "l2arctic_auc": 0.939,
+      "l2arctic_auc_vietnamese": 0.971,
+      "l2arctic_f1": 0.633,
+      "native_flagged": 0.084
+    },
+    {
+      "model": "Peacockery/hubert-base-phoneme-en",
+      "feature": "lpp",
+      "phone_pcc": 0.503,
+      "word_pcc": 0.479,
+      "utterance_pcc": 0.726,
+      "fluency_pcc": 0.689,
+      "l2arctic_auc": 0.671,
+      "l2arctic_auc_vietnamese": 0.747,
+      "l2arctic_f1": 0.366,
+      "native_flagged": 0.047
+    },
+    {
+      "model": "facebook/wav2vec2-lv-60-espeak-cv-ft",
+      "feature": "lpp",
+      "phone_pcc": 0.459,
+      "word_pcc": 0.425,
+      "utterance_pcc": 0.667,
+      "fluency_pcc": 0.688,
+      "l2arctic_auc": 0.665,
+      "l2arctic_auc_vietnamese": 0.77,
+      "l2arctic_f1": 0.294,
+      "native_flagged": 0.197
+    },
+    {
+      "model": "vitouphy/wav2vec2-xls-r-300m-timit-phoneme",
+      "feature": "lpp",
+      "phone_pcc": 0.449,
+      "word_pcc": 0.417,
+      "utterance_pcc": 0.635,
+      "fluency_pcc": 0.707,
+      "l2arctic_auc": 0.785,
+      "l2arctic_auc_vietnamese": 0.861,
+      "l2arctic_f1": 0.417,
+      "native_flagged": 0.154
+    },
+    {
+      "model": "facebook/wav2vec2-xlsr-53-espeak-cv-ft",
+      "feature": "lpp",
+      "phone_pcc": 0.399,
+      "word_pcc": 0.377,
+      "utterance_pcc": 0.687,
+      "fluency_pcc": 0.687,
+      "l2arctic_auc": 0.701,
+      "l2arctic_auc_vietnamese": 0.807,
+      "l2arctic_f1": 0.411,
+      "native_flagged": 0.08
+    },
+    {
+      "model": "ginic/full_dataset_train_3_wav2vec2-large-xlsr-53-buckeye-ipa",
+      "feature": "lpp",
+      "phone_pcc": 0.378,
+      "word_pcc": 0.318,
+      "utterance_pcc": 0.653,
+      "fluency_pcc": 0.694,
+      "l2arctic_auc": 0.787,
+      "l2arctic_auc_vietnamese": 0.854,
+      "l2arctic_f1": 0.421,
+      "native_flagged": 0.159
+    },
+    {
+      "model": "bookbot/wav2vec2-ljspeech-gruut",
+      "feature": "lpp",
+      "phone_pcc": 0.339,
+      "word_pcc": 0.311,
+      "utterance_pcc": 0.653,
+      "fluency_pcc": 0.717,
+      "l2arctic_auc": 0.67,
+      "l2arctic_auc_vietnamese": 0.752,
+      "l2arctic_f1": 0.402,
+      "native_flagged": 0.086
+    }
+  ]
+}

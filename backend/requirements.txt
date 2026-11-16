@@ -1,0 +1,15 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12
+praat-parselmouth>=0.4.3
+cmudict>=1.0.13
+httpx>=0.27
+# Acoustic model
+torch>=2.2
+transformers>=4.40
+huggingface_hub>=0.22
+# Calibration tools only (tools/calibrate.py reads L2-ARCTIC / LibriSpeech parquet)
+# pyarrow>=14

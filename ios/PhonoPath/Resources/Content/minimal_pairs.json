@@ -1,0 +1,438 @@
+[
+ {
+  "id": "pair-0",
+  "a": {
+   "word": "sheep",
+   "ipa": "ʃiːp",
+   "phones": [
+    "SH",
+    "IY",
+    "P"
+   ]
+  },
+  "b": {
+   "word": "ship",
+   "ipa": "ʃɪp",
+   "phones": [
+    "SH",
+    "IH",
+    "P"
+   ]
+  },
+  "contrast": [
+   "IY",
+   "IH"
+  ],
+  "note": "Âm dài /iː/ kéo môi cười; âm ngắn /ɪ/ thả lỏng."
+ },
+ {
+  "id": "pair-1",
+  "a": {
+   "word": "leave",
+   "ipa": "liːv",
+   "phones": [
+    "L",
+    "IY",
+    "V"
+   ]
+  },
+  "b": {
+   "word": "live",
+   "ipa": "lɪv",
+   "phones": [
+    "L",
+    "IH",
+    "V"
+   ]
+  },
+  "contrast": [
+   "IY",
+   "IH"
+  ],
+  "note": null
+ },
+ {
+  "id": "pair-2",
+  "a": {
+   "word": "seat",
+   "ipa": "siːt",
+   "phones": [
+    "S",
+    "IY",
+    "T"
+   ]
+  },
+  "b": {
+   "word": "sit",
+   "ipa": "sɪt",
+   "phones": [
+    "S",
+    "IH",
+    "T"
+   ]
+  },
+  "contrast": [
+   "IY",
+   "IH"
+  ],
+  "note": null
+ },
+ {
+  "id": "pair-3",
+  "a": {
+   "word": "bad",
+   "ipa": "bæd",
+   "phones": [
+    "B",
+    "AE",
+    "D"
+   ]
+  },
+  "b": {
+   "word": "bed",
+   "ipa": "bed",
+   "phones": [
+    "B",
+    "EH",
+    "D"
+   ]
+  },
+  "contrast": [
+   "AE",
+   "EH"
+  ],
+  "note": "/æ/ mở miệng rộng hơn hẳn /e/."
+ },
+ {
+  "id": "pair-4",
+  "a": {
+   "word": "man",
+   "ipa": "mæn",
+   "phones": [
+    "M",
+    "AE",
+    "N"
+   ]
+  },
+  "b": {
+   "word": "men",
+   "ipa": "men",
+   "phones": [
+    "M",
+    "EH",
+    "N"
+   ]
+  },
+  "contrast": [
+   "AE",
+   "EH"
+  ],
+  "note": null
+ },
+ {
+  "id": "pair-5",
+  "a": {
+   "word": "think",
+   "ipa": "θɪŋk",
+   "phones": [
+    "TH",
+    "IH",
+    "NG",
+    "K"
+   ]
+  },
+  "b": {
+   "word": "sink",
+   "ipa": "sɪŋk",
+   "phones": [
+    "S",
+    "IH",
+    "NG",
+    "K"
+   ]
+  },
+  "contrast": [
+   "TH",
+   "S"
+  ],
+  "note": "/θ/ cần đặt lưỡi giữa hai hàm răng."
+ },
+ {
+  "id": "pair-6",
+  "a": {
+   "word": "three",
+   "ipa": "θriː",
+   "phones": [
+    "TH",
+    "R",
+    "IY"
+   ]
+  },
+  "b": {
+   "word": "tree",
+   "ipa": "triː",
+   "phones": [
+    "T",
+    "R",
+    "IY"
+   ]
+  },
+  "contrast": [
+   "TH",
+   "T"
+  ],
+  "note": null
+ },
+ {
+  "id": "pair-7",
+  "a": {
+   "word": "they",
+   "ipa": "ðeɪ",
+   "phones": [
+    "DH",
+    "EY"
+   ]
+  },
+  "b": {
+   "word": "day",
+   "ipa": "deɪ",
+   "phones": [
+    "D",
+    "EY"
+   ]
+  },
+  "contrast": [
+   "DH",
+   "D"
+  ],
+  "note": "/ð/ cũng đặt lưỡi giữa răng nhưng rung dây thanh."
+ },
+ {
+  "id": "pair-8",
+  "a": {
+   "word": "she",
+   "ipa": "ʃiː",
+   "phones": [
+    "SH",
+    "IY"
+   ]
+  },
+  "b": {
+   "word": "see",
+   "ipa": "siː",
+   "phones": [
+    "S",
+    "IY"
+   ]
+  },
+  "contrast": [
+   "SH",
+   "S"
+  ],
+  "note": "/ʃ/ chu môi và lùi lưỡi về sau."
+ },
+ {
+  "id": "pair-9",
+  "a": {
+   "word": "light",
+   "ipa": "laɪt",
+   "phones": [
+    "L",
+    "AY",
+    "T"
+   ]
+  },
+  "b": {
+   "word": "night",
+   "ipa": "naɪt",
+   "phones": [
+    "N",
+    "AY",
+    "T"
+   ]
+  },
+  "contrast": [
+   "L",
+   "N"
+  ],
+  "note": "/n/ cho hơi qua mũi, /l/ cho hơi qua hai bên lưỡi."
+ },
+ {
+  "id": "pair-10",
+  "a": {
+   "word": "very",
+   "ipa": "ˈveri",
+   "phones": [
+    "V",
+    "EH",
+    "R",
+    "IY"
+   ]
+  },
+  "b": {
+   "word": "berry",
+   "ipa": "ˈberi",
+   "phones": [
+    "B",
+    "EH",
+    "R",
+    "IY"
+   ]
+  },
+  "contrast": [
+   "V",
+   "B"
+  ],
+  "note": "/v/ là răng chạm môi, /b/ là hai môi chạm nhau."
+ },
+ {
+  "id": "pair-11",
+  "a": {
+   "word": "zoo",
+   "ipa": "zuː",
+   "phones": [
+    "Z",
+    "UW"
+   ]
+  },
+  "b": {
+   "word": "sue",
+   "ipa": "suː",
+   "phones": [
+    "S",
+    "UW"
+   ]
+  },
+  "contrast": [
+   "Z",
+   "S"
+  ],
+  "note": "/z/ rung dây thanh, /s/ thì không."
+ },
+ {
+  "id": "pair-12",
+  "a": {
+   "word": "full",
+   "ipa": "fʊl",
+   "phones": [
+    "F",
+    "UH",
+    "L"
+   ]
+  },
+  "b": {
+   "word": "fool",
+   "ipa": "fuːl",
+   "phones": [
+    "F",
+    "UW",
+    "L"
+   ]
+  },
+  "contrast": [
+   "UH",
+   "UW"
+  ],
+  "note": "/uː/ chu môi và đọc dài."
+ },
+ {
+  "id": "pair-13",
+  "a": {
+   "word": "cut",
+   "ipa": "kʌt",
+   "phones": [
+    "K",
+    "AH",
+    "T"
+   ]
+  },
+  "b": {
+   "word": "cot",
+   "ipa": "kɑːt",
+   "phones": [
+    "K",
+    "AA",
+    "T"
+   ]
+  },
+  "contrast": [
+   "AH",
+   "AA"
+  ],
+  "note": "/ɑː/ mở miệng rộng và sâu hơn /ʌ/."
+ },
+ {
+  "id": "pair-14",
+  "a": {
+   "word": "chip",
+   "ipa": "tʃɪp",
+   "phones": [
+    "CH",
+    "IH",
+    "P"
+   ]
+  },
+  "b": {
+   "word": "ship",
+   "ipa": "ʃɪp",
+   "phones": [
+    "SH",
+    "IH",
+    "P"
+   ]
+  },
+  "contrast": [
+   "CH",
+   "SH"
+  ],
+  "note": "/tʃ/ bắt đầu bằng một tiếng bật."
+ },
+ {
+  "id": "pair-15",
+  "a": {
+   "word": "bike",
+   "ipa": "baɪk",
+   "phones": [
+    "B",
+    "AY",
+    "K"
+   ]
+  },
+  "b": {
+   "word": "buy",
+   "ipa": "baɪ",
+   "phones": [
+    "B",
+    "AY"
+   ]
+  },
+  "contrast": [
+   "K"
+  ],
+  "note": "Đừng bỏ phụ âm cuối: bike có /k/ ở cuối."
+ },
+ {
+  "id": "pair-16",
+  "a": {
+   "word": "rice",
+   "ipa": "raɪs",
+   "phones": [
+    "R",
+    "AY",
+    "S"
+   ]
+  },
+  "b": {
+   "word": "rye",
+   "ipa": "raɪ",
+   "phones": [
+    "R",
+    "AY"
+   ]
+  },
+  "contrast": [
+   "S"
+  ],
+  "note": "Giữ tiếng xì /s/ ở cuối từ."
+ }
+]

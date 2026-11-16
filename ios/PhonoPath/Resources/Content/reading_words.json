@@ -1,0 +1,539 @@
+[
+ {
+  "word": "cat",
+  "ipa": "kæt",
+  "phones": [
+   "K",
+   "AE",
+   "T"
+  ]
+ },
+ {
+  "word": "dog",
+  "ipa": "dɔːɡ",
+  "phones": [
+   "D",
+   "AO",
+   "G"
+  ]
+ },
+ {
+  "word": "fish",
+  "ipa": "fɪʃ",
+  "phones": [
+   "F",
+   "IH",
+   "SH"
+  ]
+ },
+ {
+  "word": "bird",
+  "ipa": "bɝːd",
+  "phones": [
+   "B",
+   "ER",
+   "D"
+  ]
+ },
+ {
+  "word": "book",
+  "ipa": "bʊk",
+  "phones": [
+   "B",
+   "UH",
+   "K"
+  ]
+ },
+ {
+  "word": "food",
+  "ipa": "fuːd",
+  "phones": [
+   "F",
+   "UW",
+   "D"
+  ]
+ },
+ {
+  "word": "water",
+  "ipa": "ˈwɔːtɚ",
+  "phones": [
+   "W",
+   "AO",
+   "T",
+   "AXR"
+  ]
+ },
+ {
+  "word": "teacher",
+  "ipa": "ˈtiːtʃɚ",
+  "phones": [
+   "T",
+   "IY",
+   "CH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "think",
+  "ipa": "θɪŋk",
+  "phones": [
+   "TH",
+   "IH",
+   "NG",
+   "K"
+  ]
+ },
+ {
+  "word": "this",
+  "ipa": "ðɪs",
+  "phones": [
+   "DH",
+   "IH",
+   "S"
+  ]
+ },
+ {
+  "word": "ship",
+  "ipa": "ʃɪp",
+  "phones": [
+   "SH",
+   "IH",
+   "P"
+  ]
+ },
+ {
+  "word": "sheep",
+  "ipa": "ʃiːp",
+  "phones": [
+   "SH",
+   "IY",
+   "P"
+  ]
+ },
+ {
+  "word": "red",
+  "ipa": "red",
+  "phones": [
+   "R",
+   "EH",
+   "D"
+  ]
+ },
+ {
+  "word": "yellow",
+  "ipa": "ˈjeloʊ",
+  "phones": [
+   "Y",
+   "EH",
+   "L",
+   "OW"
+  ]
+ },
+ {
+  "word": "green",
+  "ipa": "ɡriːn",
+  "phones": [
+   "G",
+   "R",
+   "IY",
+   "N"
+  ]
+ },
+ {
+  "word": "blue",
+  "ipa": "bluː",
+  "phones": [
+   "B",
+   "L",
+   "UW"
+  ]
+ },
+ {
+  "word": "house",
+  "ipa": "haʊs",
+  "phones": [
+   "HH",
+   "AW",
+   "S"
+  ]
+ },
+ {
+  "word": "home",
+  "ipa": "hoʊm",
+  "phones": [
+   "HH",
+   "OW",
+   "M"
+  ]
+ },
+ {
+  "word": "school",
+  "ipa": "skuːl",
+  "phones": [
+   "S",
+   "K",
+   "UW",
+   "L"
+  ]
+ },
+ {
+  "word": "time",
+  "ipa": "taɪm",
+  "phones": [
+   "T",
+   "AY",
+   "M"
+  ]
+ },
+ {
+  "word": "music",
+  "ipa": "ˈmjuːzɪk",
+  "phones": [
+   "M",
+   "Y",
+   "UW",
+   "Z",
+   "IH",
+   "K"
+  ]
+ },
+ {
+  "word": "happy",
+  "ipa": "ˈhæpi",
+  "phones": [
+   "HH",
+   "AE",
+   "P",
+   "IY"
+  ]
+ },
+ {
+  "word": "family",
+  "ipa": "ˈfæməli",
+  "phones": [
+   "F",
+   "AE",
+   "M",
+   "AX",
+   "L",
+   "IY"
+  ]
+ },
+ {
+  "word": "morning",
+  "ipa": "ˈmɔːrnɪŋ",
+  "phones": [
+   "M",
+   "AO",
+   "R",
+   "N",
+   "IH",
+   "NG"
+  ]
+ },
+ {
+  "word": "night",
+  "ipa": "naɪt",
+  "phones": [
+   "N",
+   "AY",
+   "T"
+  ]
+ },
+ {
+  "word": "light",
+  "ipa": "laɪt",
+  "phones": [
+   "L",
+   "AY",
+   "T"
+  ]
+ },
+ {
+  "word": "coffee",
+  "ipa": "ˈkɑːfi",
+  "phones": [
+   "K",
+   "AA",
+   "F",
+   "IY"
+  ]
+ },
+ {
+  "word": "measure",
+  "ipa": "ˈmeʒɚ",
+  "phones": [
+   "M",
+   "EH",
+   "ZH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "thank",
+  "ipa": "θæŋk",
+  "phones": [
+   "TH",
+   "AE",
+   "NG",
+   "K"
+  ]
+ },
+ {
+  "word": "weather",
+  "ipa": "ˈweðɚ",
+  "phones": [
+   "W",
+   "EH",
+   "DH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "mother",
+  "ipa": "ˈmʌðɚ",
+  "phones": [
+   "M",
+   "AH",
+   "DH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "father",
+  "ipa": "ˈfɑːðɚ",
+  "phones": [
+   "F",
+   "AA",
+   "DH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "brother",
+  "ipa": "ˈbrʌðɚ",
+  "phones": [
+   "B",
+   "R",
+   "AH",
+   "DH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "sister",
+  "ipa": "ˈsɪstɚ",
+  "phones": [
+   "S",
+   "IH",
+   "S",
+   "T",
+   "AXR"
+  ]
+ },
+ {
+  "word": "purple",
+  "ipa": "ˈpɝːpəl",
+  "phones": [
+   "P",
+   "ER",
+   "P",
+   "AX",
+   "L"
+  ]
+ },
+ {
+  "word": "orange",
+  "ipa": "ˈɔːrəndʒ",
+  "phones": [
+   "AO",
+   "R",
+   "AX",
+   "N",
+   "JH"
+  ]
+ },
+ {
+  "word": "chair",
+  "ipa": "tʃer",
+  "phones": [
+   "CH",
+   "EH",
+   "R"
+  ]
+ },
+ {
+  "word": "job",
+  "ipa": "dʒɑːb",
+  "phones": [
+   "JH",
+   "AA",
+   "B"
+  ]
+ },
+ {
+  "word": "age",
+  "ipa": "eɪdʒ",
+  "phones": [
+   "EY",
+   "JH"
+  ]
+ },
+ {
+  "word": "vision",
+  "ipa": "ˈvɪʒən",
+  "phones": [
+   "V",
+   "IH",
+   "ZH",
+   "AX",
+   "N"
+  ]
+ },
+ {
+  "word": "usual",
+  "ipa": "ˈjuːʒəwəl",
+  "phones": [
+   "Y",
+   "UW",
+   "ZH",
+   "AX",
+   "W",
+   "AX",
+   "L"
+  ]
+ },
+ {
+  "word": "nation",
+  "ipa": "ˈneɪʃən",
+  "phones": [
+   "N",
+   "EY",
+   "SH",
+   "AX",
+   "N"
+  ]
+ },
+ {
+  "word": "picture",
+  "ipa": "ˈpɪktʃɚ",
+  "phones": [
+   "P",
+   "IH",
+   "K",
+   "CH",
+   "AXR"
+  ]
+ },
+ {
+  "word": "garden",
+  "ipa": "ˈɡɑːrdən",
+  "phones": [
+   "G",
+   "AA",
+   "R",
+   "D",
+   "AX",
+   "N"
+  ]
+ },
+ {
+  "word": "window",
+  "ipa": "ˈwɪndoʊ",
+  "phones": [
+   "W",
+   "IH",
+   "N",
+   "D",
+   "OW"
+  ]
+ },
+ {
+  "word": "question",
+  "ipa": "ˈkwestʃən",
+  "phones": [
+   "K",
+   "W",
+   "EH",
+   "S",
+   "CH",
+   "AX",
+   "N"
+  ]
+ },
+ {
+  "word": "answer",
+  "ipa": "ˈænsɚ",
+  "phones": [
+   "AE",
+   "N",
+   "S",
+   "AXR"
+  ]
+ },
+ {
+  "word": "language",
+  "ipa": "ˈlæŋɡwədʒ",
+  "phones": [
+   "L",
+   "AE",
+   "NG",
+   "G",
+   "W",
+   "AX",
+   "JH"
+  ]
+ },
+ {
+  "word": "beautiful",
+  "ipa": "ˈbjuːtəfəl",
+  "phones": [
+   "B",
+   "Y",
+   "UW",
+   "T",
+   "AX",
+   "F",
+   "AX",
+   "L"
+  ]
+ },
+ {
+  "word": "computer",
+  "ipa": "kəmˈpjuːtɚ",
+  "phones": [
+   "K",
+   "AX",
+   "M",
+   "P",
+   "Y",
+   "UW",
+   "T",
+   "AXR"
+  ]
+ },
+ {
+  "word": "banana",
+  "ipa": "bəˈnænə",
+  "phones": [
+   "B",
+   "AX",
+   "N",
+   "AE",
+   "N",
+   "AX"
+  ]
+ },
+ {
+  "word": "tomorrow",
+  "ipa": "təˈmɑːroʊ",
+  "phones": [
+   "T",
+   "AX",
+   "M",
+   "AA",
+   "R",
+   "OW"
+  ]
+ }
+]

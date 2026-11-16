@@ -1,0 +1,183 @@
+[
+ {
+  "id": "u1",
+  "title": "i dài và i ngắn",
+  "sounds": [
+   "IY",
+   "IH"
+  ],
+  "confusables": []
+ },
+ {
+  "id": "u2",
+  "title": "Hai âm e",
+  "sounds": [
+   "EH",
+   "AE"
+  ],
+  "confusables": [
+   "IH"
+  ]
+ },
+ {
+  "id": "u3",
+  "title": "a sâu và ă",
+  "sounds": [
+   "AA",
+   "AH"
+  ],
+  "confusables": [
+   "AE"
+  ]
+ },
+ {
+  "id": "u4",
+  "title": "Nhóm môi tròn",
+  "sounds": [
+   "AO",
+   "UH",
+   "UW"
+  ],
+  "confusables": [
+   "AA"
+  ]
+ },
+ {
+  "id": "u5",
+  "title": "Schwa và âm cong lưỡi",
+  "sounds": [
+   "AX",
+   "ER",
+   "AXR"
+  ],
+  "confusables": [
+   "AH"
+  ]
+ },
+ {
+  "id": "u6",
+  "title": "Nguyên âm đôi lướt lên /ɪ/",
+  "sounds": [
+   "EY",
+   "AY",
+   "OY"
+  ],
+  "confusables": [
+   "EH",
+   "IY"
+  ]
+ },
+ {
+  "id": "u7",
+  "title": "Nguyên âm đôi lướt về /ʊ/",
+  "sounds": [
+   "AW",
+   "OW"
+  ],
+  "confusables": [
+   "AO",
+   "UW"
+  ]
+ },
+ {
+  "id": "u8",
+  "title": "Âm hai môi",
+  "sounds": [
+   "P",
+   "B",
+   "M"
+  ],
+  "confusables": [
+   "F",
+   "V"
+  ]
+ },
+ {
+  "id": "u9",
+  "title": "Âm đầu lưỡi",
+  "sounds": [
+   "T",
+   "D",
+   "N",
+   "L"
+  ],
+  "confusables": []
+ },
+ {
+  "id": "u10",
+  "title": "Âm cuống lưỡi",
+  "sounds": [
+   "K",
+   "G",
+   "NG"
+  ],
+  "confusables": [
+   "N"
+  ]
+ },
+ {
+  "id": "u11",
+  "title": "Răng chạm môi",
+  "sounds": [
+   "F",
+   "V",
+   "W"
+  ],
+  "confusables": [
+   "B",
+   "P"
+  ]
+ },
+ {
+  "id": "u12",
+  "title": "Âm lưỡi giữa răng",
+  "sounds": [
+   "TH",
+   "DH"
+  ],
+  "confusables": [
+   "T",
+   "D",
+   "S",
+   "Z"
+  ]
+ },
+ {
+  "id": "u13",
+  "title": "Âm gió xì",
+  "sounds": [
+   "S",
+   "Z",
+   "SH",
+   "ZH"
+  ],
+  "confusables": [
+   "TH"
+  ]
+ },
+ {
+  "id": "u14",
+  "title": "Âm bật xì",
+  "sounds": [
+   "CH",
+   "JH"
+  ],
+  "confusables": [
+   "SH",
+   "ZH"
+  ]
+ },
+ {
+  "id": "u15",
+  "title": "Âm lướt và âm h",
+  "sounds": [
+   "R",
+   "Y",
+   "HH"
+  ],
+  "confusables": [
+   "L",
+   "W"
+  ]
+ }
+]

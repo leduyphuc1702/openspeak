@@ -1,0 +1,122 @@
+[
+ {
+  "id": "daily",
+  "title": "Đời sống hằng ngày",
+  "icon": "house.fill"
+ },
+ {
+  "id": "travel",
+  "title": "Du lịch",
+  "icon": "airplane"
+ },
+ {
+  "id": "food",
+  "title": "Ẩm thực",
+  "icon": "fork.knife"
+ },
+ {
+  "id": "work",
+  "title": "Công việc văn phòng",
+  "icon": "briefcase.fill"
+ },
+ {
+  "id": "interview",
+  "title": "Phỏng vấn xin việc",
+  "icon": "person.crop.rectangle.fill"
+ },
+ {
+  "id": "shopping",
+  "title": "Mua sắm",
+  "icon": "bag.fill"
+ },
+ {
+  "id": "health",
+  "title": "Sức khoẻ",
+  "icon": "heart.fill"
+ },
+ {
+  "id": "technology",
+  "title": "Công nghệ",
+  "icon": "laptopcomputer"
+ },
+ {
+  "id": "education",
+  "title": "Học tập",
+  "icon": "graduationcap.fill"
+ },
+ {
+  "id": "social",
+  "title": "Giao tiếp, kết bạn",
+  "icon": "bubble.left.and.bubble.right.fill"
+ },
+ {
+  "id": "meetings",
+  "title": "Họp hành",
+  "icon": "person.3.fill"
+ },
+ {
+  "id": "email",
+  "title": "Email, tin nhắn công việc",
+  "icon": "envelope.fill"
+ },
+ {
+  "id": "presentation",
+  "title": "Thuyết trình, báo cáo số liệu",
+  "icon": "chart.bar.doc.horizontal"
+ },
+ {
+  "id": "smalltalk",
+  "title": "Small talk ở văn phòng",
+  "icon": "cup.and.saucer.fill"
+ },
+ {
+  "id": "calls",
+  "title": "Gọi điện, họp online",
+  "icon": "phone.fill"
+ },
+ {
+  "id": "negotiation",
+  "title": "Đàm phán, hợp đồng",
+  "icon": "signature"
+ },
+ {
+  "id": "project",
+  "title": "Quản lý dự án, tiến độ",
+  "icon": "checklist"
+ },
+ {
+  "id": "customer",
+  "title": "Khách hàng, dịch vụ",
+  "icon": "person.crop.circle.badge.checkmark"
+ },
+ {
+  "id": "finance",
+  "title": "Tiền bạc, ngân hàng",
+  "icon": "banknote.fill"
+ },
+ {
+  "id": "opinions",
+  "title": "Nêu ý kiến, đồng ý, phản đối",
+  "icon": "text.bubble.fill"
+ },
+ {
+  "id": "feelings",
+  "title": "Cảm xúc, trạng thái",
+  "icon": "face.smiling"
+ },
+ {
+  "id": "transport",
+  "title": "Đi lại, giao thông",
+  "icon": "car.fill"
+ },
+ {
+  "id": "housing",
+  "title": "Nhà cửa, thuê nhà",
+  "icon": "building.2.fill"
+ },
+ {
+  "id": "emergency",
+  "title": "Tình huống khẩn cấp",
+  "icon": "cross.case.fill"
+ }
+]

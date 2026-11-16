@@ -1,0 +1,2482 @@
+[
+ {
+  "id": "IY",
+  "symbol": "iː",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "see",
+    "ipa": "siː",
+    "phones": [
+     "S",
+     "IY"
+    ]
+   },
+   {
+    "word": "team",
+    "ipa": "tiːm",
+    "phones": [
+     "T",
+     "IY",
+     "M"
+    ]
+   },
+   {
+    "word": "eat",
+    "ipa": "iːt",
+    "phones": [
+     "IY",
+     "T"
+    ]
+   }
+  ],
+  "tip": "Kéo môi sang hai bên như đang cười, lưỡi nâng cao ở phía trước. Đọc dài, khác với /ɪ/ ngắn.",
+  "speakIPA": "iː",
+  "articulation": {
+   "start": {
+    "lips": "spread",
+    "jaw": 0.12,
+    "tongueHeight": 0.95,
+    "tongueFront": 0.95,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Kéo hai khoé môi sang hai bên như đang cười.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "IH",
+  "symbol": "ɪ",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "sit",
+    "ipa": "sɪt",
+    "phones": [
+     "S",
+     "IH",
+     "T"
+    ]
+   },
+   {
+    "word": "ship",
+    "ipa": "ʃɪp",
+    "phones": [
+     "SH",
+     "IH",
+     "P"
+    ]
+   },
+   {
+    "word": "big",
+    "ipa": "bɪɡ",
+    "phones": [
+     "B",
+     "IH",
+     "G"
+    ]
+   }
+  ],
+  "tip": "Ngắn và lỏng hơn /iː/, miệng mở rộng hơn một chút, nằm giữa 'i' và 'ê'. Người Việt hay đọc thành 'i' dài.",
+  "speakIPA": "ɪ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.8,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "EH",
+  "symbol": "e",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "bed",
+    "ipa": "bed",
+    "phones": [
+     "B",
+     "EH",
+     "D"
+    ]
+   },
+   {
+    "word": "ten",
+    "ipa": "ten",
+    "phones": [
+     "T",
+     "EH",
+     "N"
+    ]
+   },
+   {
+    "word": "said",
+    "ipa": "sed",
+    "phones": [
+     "S",
+     "EH",
+     "D"
+    ]
+   }
+  ],
+  "tip": "Miệng mở vừa, lưỡi ở giữa, gần giống 'e' tiếng Việt nhưng gọn hơn.",
+  "speakIPA": "e",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.45,
+    "tongueHeight": 0.55,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AE",
+  "symbol": "æ",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "cat",
+    "ipa": "kæt",
+    "phones": [
+     "K",
+     "AE",
+     "T"
+    ]
+   },
+   {
+    "word": "man",
+    "ipa": "mæn",
+    "phones": [
+     "M",
+     "AE",
+     "N"
+    ]
+   },
+   {
+    "word": "bad",
+    "ipa": "bæd",
+    "phones": [
+     "B",
+     "AE",
+     "D"
+    ]
+   }
+  ],
+  "tip": "Hạ hàm dưới, mở miệng rộng, môi kéo sang hai bên: âm nằm giữa 'a' và 'e'. Đừng đọc thành /e/ (bad khác bed).",
+  "speakIPA": "æ",
+  "articulation": {
+   "start": {
+    "lips": "spread",
+    "jaw": 0.8,
+    "tongueHeight": 0.25,
+    "tongueFront": 0.8,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Kéo hai khoé môi sang hai bên như đang cười.",
+   "Hàm: Hạ hàm dưới, mở miệng rộng (khoảng 2 ngón tay).",
+   "Lưỡi: Thân lưỡi hạ thấp, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AA",
+  "symbol": "ɑː",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "hot",
+    "ipa": "hɑːt",
+    "phones": [
+     "HH",
+     "AA",
+     "T"
+    ]
+   },
+   {
+    "word": "car",
+    "ipa": "kɑːr",
+    "phones": [
+     "K",
+     "AA",
+     "R"
+    ]
+   },
+   {
+    "word": "father",
+    "ipa": "ˈfɑːðɚ",
+    "phones": [
+     "F",
+     "AA",
+     "DH",
+     "AXR"
+    ]
+   }
+  ],
+  "tip": "Mở miệng rộng, lưỡi hạ thấp và lùi về sau, như 'a' tiếng Việt nhưng sâu và dài hơn.",
+  "speakIPA": "ɑː",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.9,
+    "tongueHeight": 0.12,
+    "tongueFront": 0.25,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hạ hàm dưới, mở miệng rộng (khoảng 2 ngón tay).",
+   "Lưỡi: Thân lưỡi hạ thấp, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AO",
+  "symbol": "ɔː",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "saw",
+    "ipa": "sɔː",
+    "phones": [
+     "S",
+     "AO"
+    ]
+   },
+   {
+    "word": "talk",
+    "ipa": "tɔːk",
+    "phones": [
+     "T",
+     "AO",
+     "K"
+    ]
+   },
+   {
+    "word": "law",
+    "ipa": "lɔː",
+    "phones": [
+     "L",
+     "AO"
+    ]
+   }
+  ],
+  "tip": "Môi tròn nhẹ, miệng mở vừa, âm phát sâu trong khoang miệng, giống 'o' kéo dài.",
+  "speakIPA": "ɔː",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.6,
+    "tongueHeight": 0.35,
+    "tongueFront": 0.15,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "UH",
+  "symbol": "ʊ",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "book",
+    "ipa": "bʊk",
+    "phones": [
+     "B",
+     "UH",
+     "K"
+    ]
+   },
+   {
+    "word": "good",
+    "ipa": "ɡʊd",
+    "phones": [
+     "G",
+     "UH",
+     "D"
+    ]
+   },
+   {
+    "word": "put",
+    "ipa": "pʊt",
+    "phones": [
+     "P",
+     "UH",
+     "T"
+    ]
+   }
+  ],
+  "tip": "Ngắn, môi tròn lỏng, không chu môi mạnh như /uː/.",
+  "speakIPA": "ʊ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.3,
+    "tongueHeight": 0.75,
+    "tongueFront": 0.3,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "UW",
+  "symbol": "uː",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "food",
+    "ipa": "fuːd",
+    "phones": [
+     "F",
+     "UW",
+     "D"
+    ]
+   },
+   {
+    "word": "blue",
+    "ipa": "bluː",
+    "phones": [
+     "B",
+     "L",
+     "UW"
+    ]
+   },
+   {
+    "word": "two",
+    "ipa": "tuː",
+    "phones": [
+     "T",
+     "UW"
+    ]
+   }
+  ],
+  "tip": "Chu tròn môi về phía trước, lưỡi nâng cao ở phía sau, đọc dài.",
+  "speakIPA": "uː",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.12,
+    "tongueHeight": 0.95,
+    "tongueFront": 0.2,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AH",
+  "symbol": "ʌ",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "cup",
+    "ipa": "kʌp",
+    "phones": [
+     "K",
+     "AH",
+     "P"
+    ]
+   },
+   {
+    "word": "love",
+    "ipa": "lʌv",
+    "phones": [
+     "L",
+     "AH",
+     "V"
+    ]
+   },
+   {
+    "word": "sun",
+    "ipa": "sʌn",
+    "phones": [
+     "S",
+     "AH",
+     "N"
+    ]
+   }
+  ],
+  "tip": "Ngắn, miệng mở vừa, lưỡi thả lỏng ở giữa, gần giống 'ă' tiếng Việt.",
+  "speakIPA": "ʌ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.5,
+    "tongueHeight": 0.45,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AX",
+  "symbol": "ə",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "about",
+    "ipa": "əˈbaʊt",
+    "phones": [
+     "AX",
+     "B",
+     "AW",
+     "T"
+    ]
+   },
+   {
+    "word": "banana",
+    "ipa": "bəˈnænə",
+    "phones": [
+     "B",
+     "AX",
+     "N",
+     "AE",
+     "N",
+     "AX"
+    ]
+   },
+   {
+    "word": "sofa",
+    "ipa": "ˈsoʊfə",
+    "phones": [
+     "S",
+     "OW",
+     "F",
+     "AX"
+    ]
+   }
+  ],
+  "tip": "Âm schwa, âm phổ biến nhất trong tiếng Anh, chỉ có ở âm tiết không nhấn. Thả lỏng hoàn toàn, rất ngắn và nhẹ, như 'ơ' lướt qua.",
+  "speakIPA": "ə",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.3,
+    "tongueHeight": 0.55,
+    "tongueFront": 0.55,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "ER",
+  "symbol": "ɝː",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "bird",
+    "ipa": "bɝːd",
+    "phones": [
+     "B",
+     "ER",
+     "D"
+    ]
+   },
+   {
+    "word": "work",
+    "ipa": "wɝːk",
+    "phones": [
+     "W",
+     "ER",
+     "K"
+    ]
+   },
+   {
+    "word": "learn",
+    "ipa": "lɝːn",
+    "phones": [
+     "L",
+     "ER",
+     "N"
+    ]
+   }
+  ],
+  "tip": "Cong đầu lưỡi lên nhưng không chạm vòm miệng, môi hơi tròn, đọc dài: như 'ơ' có âm r.",
+  "speakIPA": "ɝ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.3,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.5,
+    "tip": "retroflex",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Cong đầu lưỡi lên và lùi về sau, không chạm vòm miệng."
+  ]
+ },
+ {
+  "id": "AXR",
+  "symbol": "ɚ",
+  "category": "vowel",
+  "group": "Nguyên âm đơn",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "teacher",
+    "ipa": "ˈtiːtʃɚ",
+    "phones": [
+     "T",
+     "IY",
+     "CH",
+     "AXR"
+    ]
+   },
+   {
+    "word": "water",
+    "ipa": "ˈwɔːtɚ",
+    "phones": [
+     "W",
+     "AO",
+     "T",
+     "AXR"
+    ]
+   },
+   {
+    "word": "doctor",
+    "ipa": "ˈdɑːktɚ",
+    "phones": [
+     "D",
+     "AA",
+     "K",
+     "T",
+     "AXR"
+    ]
+   }
+  ],
+  "tip": "Bản ngắn, không nhấn của /ɝː/, thường ở cuối từ.",
+  "speakIPA": "ɚ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.5,
+    "tip": "retroflex",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Cong đầu lưỡi lên và lùi về sau, không chạm vòm miệng."
+  ]
+ },
+ {
+  "id": "EY",
+  "symbol": "eɪ",
+  "category": "diphthong",
+  "group": "Nguyên âm đôi",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "day",
+    "ipa": "deɪ",
+    "phones": [
+     "D",
+     "EY"
+    ]
+   },
+   {
+    "word": "make",
+    "ipa": "meɪk",
+    "phones": [
+     "M",
+     "EY",
+     "K"
+    ]
+   },
+   {
+    "word": "rain",
+    "ipa": "reɪn",
+    "phones": [
+     "R",
+     "EY",
+     "N"
+    ]
+   }
+  ],
+  "tip": "Bắt đầu ở /e/ rồi trượt nhanh lên /ɪ/, giống 'ây'.",
+  "speakIPA": "eɪ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.45,
+    "tongueHeight": 0.55,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.8,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   }
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Trượt: từ khẩu hình đầu, chuyển dần sang: môi thả lỏng tự nhiên. thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AY",
+  "symbol": "aɪ",
+  "category": "diphthong",
+  "group": "Nguyên âm đôi",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "my",
+    "ipa": "maɪ",
+    "phones": [
+     "M",
+     "AY"
+    ]
+   },
+   {
+    "word": "time",
+    "ipa": "taɪm",
+    "phones": [
+     "T",
+     "AY",
+     "M"
+    ]
+   },
+   {
+    "word": "buy",
+    "ipa": "baɪ",
+    "phones": [
+     "B",
+     "AY"
+    ]
+   }
+  ],
+  "tip": "Trượt từ 'a' sang /ɪ/, giống 'ai'.",
+  "speakIPA": "aɪ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.9,
+    "tongueHeight": 0.12,
+    "tongueFront": 0.25,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.8,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   }
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hạ hàm dưới, mở miệng rộng (khoảng 2 ngón tay).",
+   "Lưỡi: Thân lưỡi hạ thấp, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Trượt: từ khẩu hình đầu, chuyển dần sang: môi thả lỏng tự nhiên. thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "OY",
+  "symbol": "ɔɪ",
+  "category": "diphthong",
+  "group": "Nguyên âm đôi",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "boy",
+    "ipa": "bɔɪ",
+    "phones": [
+     "B",
+     "OY"
+    ]
+   },
+   {
+    "word": "coin",
+    "ipa": "kɔɪn",
+    "phones": [
+     "K",
+     "OY",
+     "N"
+    ]
+   },
+   {
+    "word": "toy",
+    "ipa": "tɔɪ",
+    "phones": [
+     "T",
+     "OY"
+    ]
+   }
+  ],
+  "tip": "Trượt từ /ɔː/ sang /ɪ/, giống 'oi'.",
+  "speakIPA": "ɔɪ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.6,
+    "tongueHeight": 0.35,
+    "tongueFront": 0.15,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.8,
+    "tongueFront": 0.85,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   }
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Trượt: từ khẩu hình đầu, chuyển dần sang: môi thả lỏng tự nhiên. thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "AW",
+  "symbol": "aʊ",
+  "category": "diphthong",
+  "group": "Nguyên âm đôi",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "now",
+    "ipa": "naʊ",
+    "phones": [
+     "N",
+     "AW"
+    ]
+   },
+   {
+    "word": "house",
+    "ipa": "haʊs",
+    "phones": [
+     "HH",
+     "AW",
+     "S"
+    ]
+   },
+   {
+    "word": "out",
+    "ipa": "aʊt",
+    "phones": [
+     "AW",
+     "T"
+    ]
+   }
+  ],
+  "tip": "Trượt từ 'a' sang /ʊ/, giống 'ao'.",
+  "speakIPA": "aʊ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.9,
+    "tongueHeight": 0.12,
+    "tongueFront": 0.25,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": {
+    "lips": "rounded",
+    "jaw": 0.3,
+    "tongueHeight": 0.75,
+    "tongueFront": 0.3,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   }
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hạ hàm dưới, mở miệng rộng (khoảng 2 ngón tay).",
+   "Lưỡi: Thân lưỡi hạ thấp, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Trượt: từ khẩu hình đầu, chuyển dần sang: chu tròn môi về phía trước như khi thổi nến. thân lưỡi nâng cao, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "OW",
+  "symbol": "oʊ",
+  "category": "diphthong",
+  "group": "Nguyên âm đôi",
+  "voiced": null,
+  "examples": [
+   {
+    "word": "go",
+    "ipa": "ɡoʊ",
+    "phones": [
+     "G",
+     "OW"
+    ]
+   },
+   {
+    "word": "home",
+    "ipa": "hoʊm",
+    "phones": [
+     "HH",
+     "OW",
+     "M"
+    ]
+   },
+   {
+    "word": "show",
+    "ipa": "ʃoʊ",
+    "phones": [
+     "SH",
+     "OW"
+    ]
+   }
+  ],
+  "tip": "Bắt đầu ở 'ô' rồi tròn môi dần sang /ʊ/. Đừng đọc thành 'ô' đơn.",
+  "speakIPA": "oʊ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.4,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.2,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "vowel",
+   "end": {
+    "lips": "rounded",
+    "jaw": 0.3,
+    "tongueHeight": 0.75,
+    "tongueFront": 0.3,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   }
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Trượt: từ khẩu hình đầu, chuyển dần sang: chu tròn môi về phía trước như khi thổi nến. thân lưỡi nâng cao, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới."
+  ]
+ },
+ {
+  "id": "P",
+  "symbol": "p",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "pen",
+    "ipa": "pen",
+    "phones": [
+     "P",
+     "EH",
+     "N"
+    ]
+   },
+   {
+    "word": "happy",
+    "ipa": "ˈhæpi",
+    "phones": [
+     "HH",
+     "AE",
+     "P",
+     "IY"
+    ]
+   },
+   {
+    "word": "stop",
+    "ipa": "stɑːp",
+    "phones": [
+     "S",
+     "T",
+     "AA",
+     "P"
+    ]
+   }
+  ],
+  "tip": "Mím môi rồi bật hơi mạnh. Ở cuối từ phải khép môi rõ: người Việt hay nuốt âm cuối.",
+  "speakIPA": "p",
+  "articulation": {
+   "start": {
+    "lips": "closed",
+    "jaw": 0.1,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Mím hai môi lại với nhau.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "B",
+  "symbol": "b",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "bad",
+    "ipa": "bæd",
+    "phones": [
+     "B",
+     "AE",
+     "D"
+    ]
+   },
+   {
+    "word": "baby",
+    "ipa": "ˈbeɪbi",
+    "phones": [
+     "B",
+     "EY",
+     "B",
+     "IY"
+    ]
+   },
+   {
+    "word": "job",
+    "ipa": "dʒɑːb",
+    "phones": [
+     "JH",
+     "AA",
+     "B"
+    ]
+   }
+  ],
+  "tip": "Như /p/ nhưng rung dây thanh. Ở cuối từ (job) vẫn phải phát âm.",
+  "speakIPA": "b",
+  "articulation": {
+   "start": {
+    "lips": "closed",
+    "jaw": 0.1,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Mím hai môi lại với nhau.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "T",
+  "symbol": "t",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "top",
+    "ipa": "tɑːp",
+    "phones": [
+     "T",
+     "AA",
+     "P"
+    ]
+   },
+   {
+    "word": "ten",
+    "ipa": "ten",
+    "phones": [
+     "T",
+     "EH",
+     "N"
+    ]
+   },
+   {
+    "word": "cat",
+    "ipa": "kæt",
+    "phones": [
+     "K",
+     "AE",
+     "T"
+    ]
+   }
+  ],
+  "tip": "Đầu lưỡi chạm lợi trên rồi bật hơi, mạnh hơn 't' tiếng Việt. Không bỏ /t/ ở cuối từ.",
+  "speakIPA": "t",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.2,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.7,
+    "tip": "alveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "D",
+  "symbol": "d",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "dog",
+    "ipa": "dɔːɡ",
+    "phones": [
+     "D",
+     "AO",
+     "G"
+    ]
+   },
+   {
+    "word": "day",
+    "ipa": "deɪ",
+    "phones": [
+     "D",
+     "EY"
+    ]
+   },
+   {
+    "word": "bed",
+    "ipa": "bed",
+    "phones": [
+     "B",
+     "EH",
+     "D"
+    ]
+   }
+  ],
+  "tip": "Đầu lưỡi chạm lợi trên, rung dây thanh. Khác 'đ' tiếng Việt: không hút hơi vào.",
+  "speakIPA": "d",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.2,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.7,
+    "tip": "alveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "K",
+  "symbol": "k",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "key",
+    "ipa": "kiː",
+    "phones": [
+     "K",
+     "IY"
+    ]
+   },
+   {
+    "word": "cat",
+    "ipa": "kæt",
+    "phones": [
+     "K",
+     "AE",
+     "T"
+    ]
+   },
+   {
+    "word": "book",
+    "ipa": "bʊk",
+    "phones": [
+     "B",
+     "UH",
+     "K"
+    ]
+   }
+  ],
+  "tip": "Cuống lưỡi chạm vòm mềm rồi bật hơi.",
+  "speakIPA": "k",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 1.0,
+    "tongueFront": 0.1,
+    "tip": "rest",
+    "contact": false,
+    "backContact": true
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng cuống lưỡi chạm vào ngạc mềm (phần mềm phía sau vòm miệng).",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "G",
+  "symbol": "ɡ",
+  "category": "consonant",
+  "group": "Âm tắc",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "go",
+    "ipa": "ɡoʊ",
+    "phones": [
+     "G",
+     "OW"
+    ]
+   },
+   {
+    "word": "big",
+    "ipa": "bɪɡ",
+    "phones": [
+     "B",
+     "IH",
+     "G"
+    ]
+   },
+   {
+    "word": "egg",
+    "ipa": "eɡ",
+    "phones": [
+     "EH",
+     "G"
+    ]
+   }
+  ],
+  "tip": "Như /k/ nhưng rung dây thanh.",
+  "speakIPA": "ɡ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 1.0,
+    "tongueFront": 0.1,
+    "tip": "rest",
+    "contact": false,
+    "backContact": true
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "stop",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng cuống lưỡi chạm vào ngạc mềm (phần mềm phía sau vòm miệng).",
+   "Hơi: Chặn hơi lại rồi bật ra dứt khoát.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "CH",
+  "symbol": "tʃ",
+  "category": "consonant",
+  "group": "Âm tắc xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "chair",
+    "ipa": "tʃer",
+    "phones": [
+     "CH",
+     "EH",
+     "R"
+    ]
+   },
+   {
+    "word": "watch",
+    "ipa": "wɑːtʃ",
+    "phones": [
+     "W",
+     "AA",
+     "CH"
+    ]
+   },
+   {
+    "word": "teacher",
+    "ipa": "ˈtiːtʃɚ",
+    "phones": [
+     "T",
+     "IY",
+     "CH",
+     "AXR"
+    ]
+   }
+  ],
+  "tip": "Chu môi nhẹ, mặt lưỡi chạm lợi rồi bật ra có hơi gió. Khác 'ch' tiếng Việt vốn không chu môi.",
+  "speakIPA": "tʃ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.15,
+    "tongueHeight": 0.7,
+    "tongueFront": 0.6,
+    "tip": "postalveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "affricate",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng mặt lưỡi về phía sau lợi, lùi hơn vị trí của /s/.",
+   "Hơi: Chặn hơi rồi nhả ra thành tiếng gió (bật + xì).",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "JH",
+  "symbol": "dʒ",
+  "category": "consonant",
+  "group": "Âm tắc xát",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "job",
+    "ipa": "dʒɑːb",
+    "phones": [
+     "JH",
+     "AA",
+     "B"
+    ]
+   },
+   {
+    "word": "age",
+    "ipa": "eɪdʒ",
+    "phones": [
+     "EY",
+     "JH"
+    ]
+   },
+   {
+    "word": "june",
+    "ipa": "dʒuːn",
+    "phones": [
+     "JH",
+     "UW",
+     "N"
+    ]
+   }
+  ],
+  "tip": "Như /tʃ/ nhưng rung dây thanh. Không đọc thành 'gi' hay /z/.",
+  "speakIPA": "dʒ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.15,
+    "tongueHeight": 0.7,
+    "tongueFront": 0.6,
+    "tip": "postalveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "affricate",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng mặt lưỡi về phía sau lợi, lùi hơn vị trí của /s/.",
+   "Hơi: Chặn hơi rồi nhả ra thành tiếng gió (bật + xì).",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "F",
+  "symbol": "f",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "fish",
+    "ipa": "fɪʃ",
+    "phones": [
+     "F",
+     "IH",
+     "SH"
+    ]
+   },
+   {
+    "word": "coffee",
+    "ipa": "ˈkɑːfi",
+    "phones": [
+     "K",
+     "AA",
+     "F",
+     "IY"
+    ]
+   },
+   {
+    "word": "laugh",
+    "ipa": "læf",
+    "phones": [
+     "L",
+     "AE",
+     "F"
+    ]
+   }
+  ],
+  "tip": "Răng trên chạm nhẹ môi dưới, thổi hơi.",
+  "speakIPA": "f",
+  "articulation": {
+   "start": {
+    "lips": "labiodental",
+    "jaw": 0.15,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Đặt nhẹ răng cửa trên lên môi dưới.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "V",
+  "symbol": "v",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "very",
+    "ipa": "ˈveri",
+    "phones": [
+     "V",
+     "EH",
+     "R",
+     "IY"
+    ]
+   },
+   {
+    "word": "love",
+    "ipa": "lʌv",
+    "phones": [
+     "L",
+     "AH",
+     "V"
+    ]
+   },
+   {
+    "word": "five",
+    "ipa": "faɪv",
+    "phones": [
+     "F",
+     "AY",
+     "V"
+    ]
+   }
+  ],
+  "tip": "Như /f/ nhưng rung dây thanh. Không đọc thành /b/ hay /w/.",
+  "speakIPA": "v",
+  "articulation": {
+   "start": {
+    "lips": "labiodental",
+    "jaw": 0.15,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Đặt nhẹ răng cửa trên lên môi dưới.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "TH",
+  "symbol": "θ",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "think",
+    "ipa": "θɪŋk",
+    "phones": [
+     "TH",
+     "IH",
+     "NG",
+     "K"
+    ]
+   },
+   {
+    "word": "three",
+    "ipa": "θriː",
+    "phones": [
+     "TH",
+     "R",
+     "IY"
+    ]
+   },
+   {
+    "word": "bath",
+    "ipa": "bæθ",
+    "phones": [
+     "B",
+     "AE",
+     "TH"
+    ]
+   }
+  ],
+  "tip": "Đặt đầu lưỡi giữa hai hàm răng rồi thổi hơi, không rung dây thanh. Người Việt hay đọc thành /t/ hoặc /s/.",
+  "speakIPA": "θ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.2,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.9,
+    "tip": "dental",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đưa đầu lưỡi ra giữa hai hàm răng, chạm nhẹ răng trên.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "DH",
+  "symbol": "ð",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "this",
+    "ipa": "ðɪs",
+    "phones": [
+     "DH",
+     "IH",
+     "S"
+    ]
+   },
+   {
+    "word": "mother",
+    "ipa": "ˈmʌðɚ",
+    "phones": [
+     "M",
+     "AH",
+     "DH",
+     "AXR"
+    ]
+   },
+   {
+    "word": "they",
+    "ipa": "ðeɪ",
+    "phones": [
+     "DH",
+     "EY"
+    ]
+   }
+  ],
+  "tip": "Lưỡi giữa hai hàm răng như /θ/ nhưng rung dây thanh. Không đọc thành 'đ' hay /z/.",
+  "speakIPA": "ð",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.2,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.9,
+    "tip": "dental",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đưa đầu lưỡi ra giữa hai hàm răng, chạm nhẹ răng trên.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "S",
+  "symbol": "s",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "see",
+    "ipa": "siː",
+    "phones": [
+     "S",
+     "IY"
+    ]
+   },
+   {
+    "word": "bus",
+    "ipa": "bʌs",
+    "phones": [
+     "B",
+     "AH",
+     "S"
+    ]
+   },
+   {
+    "word": "rice",
+    "ipa": "raɪs",
+    "phones": [
+     "R",
+     "AY",
+     "S"
+    ]
+   }
+  ],
+  "tip": "Đầu lưỡi gần lợi trên, xì hơi. Ở cuối từ (bus, rice) phải nghe rõ tiếng xì.",
+  "speakIPA": "s",
+  "articulation": {
+   "start": {
+    "lips": "spread",
+    "jaw": 0.12,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.75,
+    "tip": "alveolar",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Kéo hai khoé môi sang hai bên như đang cười.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "Z",
+  "symbol": "z",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "zoo",
+    "ipa": "zuː",
+    "phones": [
+     "Z",
+     "UW"
+    ]
+   },
+   {
+    "word": "rose",
+    "ipa": "roʊz",
+    "phones": [
+     "R",
+     "OW",
+     "Z"
+    ]
+   },
+   {
+    "word": "easy",
+    "ipa": "ˈiːzi",
+    "phones": [
+     "IY",
+     "Z",
+     "IY"
+    ]
+   }
+  ],
+  "tip": "Như /s/ nhưng rung dây thanh, nghe như tiếng ong 'zzz'.",
+  "speakIPA": "z",
+  "articulation": {
+   "start": {
+    "lips": "spread",
+    "jaw": 0.12,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.75,
+    "tip": "alveolar",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Kéo hai khoé môi sang hai bên như đang cười.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "SH",
+  "symbol": "ʃ",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "she",
+    "ipa": "ʃiː",
+    "phones": [
+     "SH",
+     "IY"
+    ]
+   },
+   {
+    "word": "fish",
+    "ipa": "fɪʃ",
+    "phones": [
+     "F",
+     "IH",
+     "SH"
+    ]
+   },
+   {
+    "word": "nation",
+    "ipa": "ˈneɪʃən",
+    "phones": [
+     "N",
+     "EY",
+     "SH",
+     "AX",
+     "N"
+    ]
+   }
+  ],
+  "tip": "Chu môi, lưỡi lùi sau hơn /s/, giống 's' uốn lưỡi trong tiếng Việt.",
+  "speakIPA": "ʃ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.15,
+    "tongueHeight": 0.7,
+    "tongueFront": 0.6,
+    "tip": "postalveolar",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng mặt lưỡi về phía sau lợi, lùi hơn vị trí của /s/.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "ZH",
+  "symbol": "ʒ",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "measure",
+    "ipa": "ˈmeʒɚ",
+    "phones": [
+     "M",
+     "EH",
+     "ZH",
+     "AXR"
+    ]
+   },
+   {
+    "word": "vision",
+    "ipa": "ˈvɪʒən",
+    "phones": [
+     "V",
+     "IH",
+     "ZH",
+     "AX",
+     "N"
+    ]
+   },
+   {
+    "word": "usual",
+    "ipa": "ˈjuːʒəwəl",
+    "phones": [
+     "Y",
+     "UW",
+     "ZH",
+     "AX",
+     "W",
+     "AX",
+     "L"
+    ]
+   }
+  ],
+  "tip": "Như /ʃ/ nhưng rung dây thanh.",
+  "speakIPA": "ʒ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.15,
+    "tongueHeight": 0.7,
+    "tongueFront": 0.6,
+    "tip": "postalveolar",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng mặt lưỡi về phía sau lợi, lùi hơn vị trí của /s/.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "HH",
+  "symbol": "h",
+  "category": "consonant",
+  "group": "Âm xát",
+  "voiced": false,
+  "examples": [
+   {
+    "word": "hat",
+    "ipa": "hæt",
+    "phones": [
+     "HH",
+     "AE",
+     "T"
+    ]
+   },
+   {
+    "word": "house",
+    "ipa": "haʊs",
+    "phones": [
+     "HH",
+     "AW",
+     "S"
+    ]
+   },
+   {
+    "word": "ahead",
+    "ipa": "əˈhed",
+    "phones": [
+     "AX",
+     "HH",
+     "EH",
+     "D"
+    ]
+   }
+  ],
+  "tip": "Đẩy hơi nhẹ từ cổ họng, giống 'h' tiếng Việt.",
+  "speakIPA": "h",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.4,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": false,
+   "nasal": false,
+   "manner": "fricative",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Mở miệng vừa phải (khoảng 1 ngón tay).",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Để hơi đi qua khe hẹp, nghe tiếng gió xì liên tục.",
+   "Thanh quản: không rung, chỉ có hơi."
+  ]
+ },
+ {
+  "id": "M",
+  "symbol": "m",
+  "category": "consonant",
+  "group": "Âm mũi",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "man",
+    "ipa": "mæn",
+    "phones": [
+     "M",
+     "AE",
+     "N"
+    ]
+   },
+   {
+    "word": "time",
+    "ipa": "taɪm",
+    "phones": [
+     "T",
+     "AY",
+     "M"
+    ]
+   },
+   {
+    "word": "summer",
+    "ipa": "ˈsʌmɚ",
+    "phones": [
+     "S",
+     "AH",
+     "M",
+     "AXR"
+    ]
+   }
+  ],
+  "tip": "Mím môi, hơi thoát qua mũi.",
+  "speakIPA": "m",
+  "articulation": {
+   "start": {
+    "lips": "closed",
+    "jaw": 0.1,
+    "tongueHeight": 0.5,
+    "tongueFront": 0.5,
+    "tip": "rest",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": true,
+   "manner": "nasal",
+   "end": null
+  },
+  "steps": [
+   "Môi: Mím hai môi lại với nhau.",
+   "Lưỡi: Thân lưỡi ở giữa, dồn ở giữa khoang miệng; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Hạ ngạc mềm cho hơi thoát ra đường mũi; bịt mũi thử sẽ mất âm.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "N",
+  "symbol": "n",
+  "category": "consonant",
+  "group": "Âm mũi",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "no",
+    "ipa": "noʊ",
+    "phones": [
+     "N",
+     "OW"
+    ]
+   },
+   {
+    "word": "sun",
+    "ipa": "sʌn",
+    "phones": [
+     "S",
+     "AH",
+     "N"
+    ]
+   },
+   {
+    "word": "dinner",
+    "ipa": "ˈdɪnɚ",
+    "phones": [
+     "D",
+     "IH",
+     "N",
+     "AXR"
+    ]
+   }
+  ],
+  "tip": "Đầu lưỡi chạm lợi trên, hơi qua mũi. Phân biệt với /l/ (night khác light).",
+  "speakIPA": "n",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.2,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.7,
+    "tip": "alveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": true,
+   "manner": "nasal",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Hạ ngạc mềm cho hơi thoát ra đường mũi; bịt mũi thử sẽ mất âm.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "NG",
+  "symbol": "ŋ",
+  "category": "consonant",
+  "group": "Âm mũi",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "sing",
+    "ipa": "sɪŋ",
+    "phones": [
+     "S",
+     "IH",
+     "NG"
+    ]
+   },
+   {
+    "word": "long",
+    "ipa": "lɔːŋ",
+    "phones": [
+     "L",
+     "AO",
+     "NG"
+    ]
+   },
+   {
+    "word": "thinking",
+    "ipa": "ˈθɪŋkɪŋ",
+    "phones": [
+     "TH",
+     "IH",
+     "NG",
+     "K",
+     "IH",
+     "NG"
+    ]
+   }
+  ],
+  "tip": "Cuống lưỡi chạm vòm mềm như 'ng' tiếng Việt. Không thêm /ɡ/ phía sau.",
+  "speakIPA": "ŋ",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 1.0,
+    "tongueFront": 0.1,
+    "tip": "rest",
+    "contact": false,
+    "backContact": true
+   },
+   "voiced": true,
+   "nasal": true,
+   "manner": "nasal",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Nâng cuống lưỡi chạm vào ngạc mềm (phần mềm phía sau vòm miệng).",
+   "Hơi: Hạ ngạc mềm cho hơi thoát ra đường mũi; bịt mũi thử sẽ mất âm.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "L",
+  "symbol": "l",
+  "category": "consonant",
+  "group": "Âm tiếp cận",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "light",
+    "ipa": "laɪt",
+    "phones": [
+     "L",
+     "AY",
+     "T"
+    ]
+   },
+   {
+    "word": "feel",
+    "ipa": "fiːl",
+    "phones": [
+     "F",
+     "IY",
+     "L"
+    ]
+   },
+   {
+    "word": "hello",
+    "ipa": "həˈloʊ",
+    "phones": [
+     "HH",
+     "AX",
+     "L",
+     "OW"
+    ]
+   }
+  ],
+  "tip": "Đầu lưỡi chạm lợi trên. Ở cuối từ (feel) vẫn giữ lưỡi chạm lợi, không bỏ âm.",
+  "speakIPA": "l",
+  "articulation": {
+   "start": {
+    "lips": "neutral",
+    "jaw": 0.25,
+    "tongueHeight": 0.55,
+    "tongueFront": 0.7,
+    "tip": "alveolar",
+    "contact": true,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "approximant",
+   "end": null
+  },
+  "steps": [
+   "Môi: Môi thả lỏng tự nhiên.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Đầu lưỡi đặt ở lợi ngay sau răng cửa trên.",
+   "Hơi: Các bộ phận chỉ lại gần nhau, hơi đi ra êm, không có tiếng gió.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "R",
+  "symbol": "r",
+  "category": "consonant",
+  "group": "Âm tiếp cận",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "red",
+    "ipa": "red",
+    "phones": [
+     "R",
+     "EH",
+     "D"
+    ]
+   },
+   {
+    "word": "car",
+    "ipa": "kɑːr",
+    "phones": [
+     "K",
+     "AA",
+     "R"
+    ]
+   },
+   {
+    "word": "very",
+    "ipa": "ˈveri",
+    "phones": [
+     "V",
+     "EH",
+     "R",
+     "IY"
+    ]
+   }
+  ],
+  "tip": "Cuộn đầu lưỡi về sau, không chạm vòm miệng, môi hơi tròn. Không rung lưỡi như 'r' tiếng Việt.",
+  "speakIPA": "ɹ",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.2,
+    "tongueHeight": 0.6,
+    "tongueFront": 0.5,
+    "tip": "retroflex",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "approximant",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Cong đầu lưỡi lên và lùi về sau, không chạm vòm miệng.",
+   "Hơi: Các bộ phận chỉ lại gần nhau, hơi đi ra êm, không có tiếng gió.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "W",
+  "symbol": "w",
+  "category": "consonant",
+  "group": "Âm tiếp cận",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "we",
+    "ipa": "wiː",
+    "phones": [
+     "W",
+     "IY"
+    ]
+   },
+   {
+    "word": "water",
+    "ipa": "ˈwɔːtɚ",
+    "phones": [
+     "W",
+     "AO",
+     "T",
+     "AXR"
+    ]
+   },
+   {
+    "word": "quick",
+    "ipa": "kwɪk",
+    "phones": [
+     "K",
+     "W",
+     "IH",
+     "K"
+    ]
+   }
+  ],
+  "tip": "Chu tròn môi rồi mở nhanh sang nguyên âm, giống 'qu' hoặc 'oa'.",
+  "speakIPA": "w",
+  "articulation": {
+   "start": {
+    "lips": "rounded",
+    "jaw": 0.15,
+    "tongueHeight": 0.9,
+    "tongueFront": 0.2,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "approximant",
+   "end": null
+  },
+  "steps": [
+   "Môi: Chu tròn môi về phía trước như khi thổi nến.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía sau; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Các bộ phận chỉ lại gần nhau, hơi đi ra êm, không có tiếng gió.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ },
+ {
+  "id": "Y",
+  "symbol": "j",
+  "category": "consonant",
+  "group": "Âm tiếp cận",
+  "voiced": true,
+  "examples": [
+   {
+    "word": "yes",
+    "ipa": "jes",
+    "phones": [
+     "Y",
+     "EH",
+     "S"
+    ]
+   },
+   {
+    "word": "you",
+    "ipa": "juː",
+    "phones": [
+     "Y",
+     "UW"
+    ]
+   },
+   {
+    "word": "yellow",
+    "ipa": "ˈjeloʊ",
+    "phones": [
+     "Y",
+     "EH",
+     "L",
+     "OW"
+    ]
+   }
+  ],
+  "tip": "Lưỡi nâng cao phía trước rồi trượt sang nguyên âm, giống 'y' trong 'yêu'.",
+  "speakIPA": "j",
+  "articulation": {
+   "start": {
+    "lips": "spread",
+    "jaw": 0.15,
+    "tongueHeight": 0.95,
+    "tongueFront": 0.95,
+    "tip": "rest",
+    "contact": false,
+    "backContact": false
+   },
+   "voiced": true,
+   "nasal": false,
+   "manner": "approximant",
+   "end": null
+  },
+  "steps": [
+   "Môi: Kéo hai khoé môi sang hai bên như đang cười.",
+   "Hàm: Hàm gần khép, miệng hé nhẹ.",
+   "Lưỡi: Thân lưỡi nâng cao, dồn phía trước; đầu lưỡi chạm nhẹ chân răng dưới.",
+   "Hơi: Các bộ phận chỉ lại gần nhau, hơi đi ra êm, không có tiếng gió.",
+   "Thanh quản: đặt tay lên cổ, phải thấy rung."
+  ]
+ }
+]
