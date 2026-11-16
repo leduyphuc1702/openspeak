@@ -17,6 +17,10 @@ final class WalkthroughTests: XCTestCase {
         self.prefix = prefix
         app = XCUIApplication()
         app.launchArguments += arguments
+        // TEST_RUNNER_BACKEND_URL points the app at a deployed server instead of localhost.
+        if let backend = ProcessInfo.processInfo.environment["BACKEND_URL"] {
+            app.launchArguments += ["-backendURL", backend]
+        }
         if onboarded {
             app.launchArguments += ["-prefs.onboarded", "YES", "-prefs.topics", "work,meetings,travel",
                                     "-prefs.level", "intermediate"]

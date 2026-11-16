@@ -161,6 +161,8 @@ xcodebuild -project PhonoPath.xcodeproj -scheme PhonoPath \
   -derivedDataPath /Volumes/DATA/Xcode/DerivedData/PhonoPath CODE_SIGNING_ALLOWED=NO test
 ```
 
+Thêm `TEST_RUNNER_BACKEND_URL=https://may-chu-cua-ban:8443` để app trong bài test gọi máy chủ đã deploy thay cho localhost.
+
 Bộ ảnh gần nhất (iPhone 17, iOS 27.2) nằm ở `docs/ui-walkthrough/`; các cặp ảnh trước/sau của những lỗi giao diện đã sửa nằm ở `docs/ui-walkthrough/review/`. Simulator không có camera nên màn "Quay khẩu hình" chỉ chụp được trạng thái báo lỗi, và backend lúc chụp chưa cấu hình LLM nên hội thoại dừng ở thông báo lỗi máy chủ.
 
 ## Cách AI "nghe" phát âm
