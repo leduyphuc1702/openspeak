@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import mimetypes
 import os
 import urllib.parse
 from functools import lru_cache
@@ -26,6 +27,8 @@ app = FastAPI(title="PhonoPath pronunciation API", version="0.2.0")
 
 # Optional folder of files to hand out (e.g. a test build of the iOS app), served at /download/.
 if os.getenv("DOWNLOAD_DIR"):
+    # Unknown extensions fall back to text/plain, which Safari would try to display.
+    mimetypes.add_type("application/octet-stream", ".ipa")
     app.mount("/download", StaticFiles(directory=os.environ["DOWNLOAD_DIR"]), name="download")
 
 
