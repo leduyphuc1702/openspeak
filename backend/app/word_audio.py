@@ -23,7 +23,7 @@ import numpy as np
 import soundfile as sf
 
 API = "https://commons.wikimedia.org/w/api.php"
-USER_AGENT = "PhonoPath/0.2 (personal pronunciation study app)"
+USER_AGENT = "OpenSpeak/0.2 (personal pronunciation study app)"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "cache" / "word_audio"
 WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]{0,39}")
 

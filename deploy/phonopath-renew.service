@@ -1,6 +1,0 @@
-[Unit]
-Description=Renew the PhonoPath TLS certificate
-
-[Service]
-Type=oneshot
-ExecStart=/opt/phonopath/deploy/renew-cert.sh

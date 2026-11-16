@@ -1,0 +1,6 @@
+[Unit]
+Description=Renew the OpenSpeak TLS certificate
+
+[Service]
+Type=oneshot
+ExecStart=/opt/openspeak/deploy/renew-cert.sh

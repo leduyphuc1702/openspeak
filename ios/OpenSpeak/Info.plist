@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>OpenSpeak</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>OpenSpeak dùng camera trước để đo khẩu hình môi khi bạn nói và gửi ảnh cận miệng cho AI nhận xét.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Kết nối tới máy chủ chấm phát âm trong mạng nội bộ.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OpenSpeak cần micro để nghe và chấm phát âm của bạn.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OpenSpeak chuyển lời bạn nói thành chữ (ngay trên máy nếu được) để hội thoại với AI.</string>
+	<key>OpenSpeakServerURL</key>
+	<string>$(OPENSPEAK_SERVER_URL)</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

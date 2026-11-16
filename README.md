@@ -1,8 +1,8 @@
-# PhonoPath
+# OpenSpeak
 
 Ứng dụng iOS (SwiftUI) học phát âm tiếng Anh, giao diện theo cấu trúc của ELSA Speak (xem phần "Đối chiếu với ELSA"), dùng cho cá nhân. Gồm bốn mảng:
 
-1. **Phiên âm**: học 41 âm IPA theo lộ trình 15 bài, mỗi âm học kỹ như trẻ mẫu giáo học chữ cái. Các bước là làm quen (sơ đồ khẩu hình và từng bước đặt môi, hàm, lưỡi), nhận mặt ký hiệu, tô ký hiệu bằng tay, nghe phân biệt, tìm âm trong từ, rồi nói. Sau đó ôn lại theo lịch lặp ngắt quãng.
+1. **Phiên âm**: học 41 âm IPA theo lộ trình nền tảng 15 bài, mỗi âm học kỹ như trẻ mẫu giáo học chữ cái. Các bước là làm quen (sơ đồ khẩu hình và từng bước đặt môi, hàm, lưỡi), nhận mặt ký hiệu, tô ký hiệu bằng tay, nghe phân biệt, tìm âm trong từ, rồi nói. Sau đó ôn lại theo lịch lặp ngắt quãng. Song song là **lộ trình cá nhân không có điểm dừng**: mỗi bài được lập từ kết quả của chính bạn (xem phần "Lộ trình cá nhân").
 2. **Luyện nói**: AI chấm **trực tiếp từ âm thanh** từng âm vị, trọng âm, ngữ điệu, độ trôi chảy và nối âm (linking, flap t, nuốt âm...). Điểm đã hiệu chỉnh theo điểm chuyên gia (xem bên dưới). Có **khẩu hình động cho cả từ và cả câu** (xem phần "Khẩu hình động"), và chế độ **quay video miệng**: điện thoại đo môi từng khung hình, sau đó LLM thị giác xem ảnh cận miệng để chỉ cách sửa.
 3. **Từ vựng**: 24 chủ đề cho người đi làm (họp, email, thuyết trình, small talk, gọi điện, đàm phán, dự án, khách hàng, tiền bạc, nêu ý kiến, cảm xúc, đi lại, thuê nhà, khẩn cấp...). LLM giao từ và cụm từ mới theo chủ đề và trình độ. Mỗi từ có thẻ học (nghĩa, IPA, ví dụ, **giọng người thật** từ Wikimedia Commons, nói, khẩu hình), sổ từ và ôn tập. Có thêm tra từ điển.
 4. **Hội thoại AI**: nhập vai tình huống công sở (8 tình huống có sẵn hoặc LLM tạo theo chủ đề bạn gõ). Mỗi tình huống có 3 nhiệm vụ. Bạn nói (nhận dạng giọng nói ngay trên máy) hoặc gõ; AI đáp lại, sửa lỗi câu, gợi ý cách nói tự nhiên hơn, đánh dấu nhiệm vụ đã xong. Câu nào cũng bấm được "Luyện nói câu này" để chấm phát âm.
@@ -31,14 +31,31 @@ pip install pytest && python -m pytest -q
 
 ### Gắn LLM của bạn
 
-Mọi endpoint tương thích `/chat/completions` đều dùng được (OpenAI, OpenRouter, Groq, Ollama, vLLM...). Khoá API chỉ nằm ở backend, không đưa vào app.
+Backend nói được 3 định dạng API, chọn bằng `LLM_API_FORMAT`:
+
+| `LLM_API_FORMAT` | Gọi tới | Dùng cho |
+|---|---|---|
+| `openai-chat-completions` (mặc định) | `{base}/chat/completions` | OpenAI, OpenRouter, Groq, Ollama, vLLM, DeepSeek... |
+| `openai-responses` | `{base}/responses` | OpenAI Responses API |
+| `anthropic-messages` | `{base}/v1/messages` (`x-api-key`, `anthropic-version`) | Anthropic hoặc cổng tương thích |
 
 ```bash
-export LLM_BASE_URL=https://api.openai.com/v1
+export LLM_API_FORMAT=openai-chat-completions
+export LLM_BASE_URL=https://api.openai.com/v1   # Anthropic: https://api.anthropic.com
 export LLM_API_KEY=sk-...
-export LLM_MODEL=gpt-4o-mini            # nhận xét phát âm, giao từ vựng, nghĩa từ
+export LLM_MODEL=gpt-4o-mini            # nhận xét phát âm, giao từ vựng, nghĩa từ, lộ trình
 export LLM_VISION_MODEL=gpt-4o-mini     # xem ảnh cận miệng (mô hình phải nhận ảnh)
+export LLM_TIMEOUT=60                   # giây
 ```
+
+Cả 3 định dạng đều gửi được ảnh và yêu cầu trả JSON. Nếu nhà cung cấp từ chối một tham số tuỳ chọn (`temperature`, `response_format`, `text`), backend bỏ tham số đó và gọi lại một lần.
+
+**Khoá của máy chủ hay của người học.** Có hai cách, dùng được cùng lúc:
+
+- *Khoá đặt ở máy chủ* (các biến trên): người dùng app không cần làm gì, nhưng ai gọi được API là dùng được khoá này, mà API hiện chưa có đăng nhập.
+- *Mỗi người tự nhập LLM của mình* trong app, ở Hồ sơ > "LLM của bạn": chọn định dạng, địa chỉ API, model, model đọc ảnh và khoá. Khoá lưu trong Keychain của iPhone. Mỗi yêu cầu tới backend mang theo các header `X-LLM-Format`, `X-LLM-Base-URL`, `X-LLM-Model`, `X-LLM-Vision-Model`, `X-LLM-Key`; backend dùng chúng cho đúng yêu cầu đó, không ghi ra đĩa hay log, và ưu tiên chúng hơn LLM của máy chủ. Nút "Kiểm tra LLM" gọi `POST /v1/llm/check`.
+
+Vì khoá đi qua backend, chỉ bật LLM riêng khi backend là máy của bạn và dùng HTTPS. Để backend không bị dùng làm cầu gọi vào mạng nội bộ, địa chỉ API do app gửi phải là `https` và trỏ tới IP công khai; muốn thử với LLM chạy trên máy mình (`http://localhost...`) thì đặt `LLM_ALLOW_PRIVATE_URLS=1`. Đặt `LLM_CLIENT_CONFIG=0` để tắt hẳn việc nhận LLM từ app.
 
 LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận; LLM chỉ nhận kết quả đo đã có cấu trúc rồi viết lời khuyên. Khi chưa có LLM, app vẫn chạy đủ: chấm điểm, mẹo có sẵn cho âm yếu nhất, gói 144 từ và cụm từ có sẵn cho 24 chủ đề, và kiểm tra khẩu hình bằng quy tắc.
 
@@ -54,6 +71,21 @@ LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận
 | `GET /v1/roleplay/scenarios` | 8 tình huống hội thoại công sở có sẵn |
 | `POST /v1/roleplay/start` | Lấy tình huống có sẵn (`scenario_id`) hoặc để LLM tạo theo `topic` |
 | `POST /v1/roleplay/turn` | Một lượt hội thoại: câu đáp, lỗi đã sửa, cách nói hay hơn, nhiệm vụ đã xong, gợi ý |
+| `POST /v1/path/next` | Bài tiếp theo của lộ trình cá nhân, lập từ điểm nói, lỗi nghe và các bài đã học |
+| `POST /v1/llm/check` | Gọi thử LLM đang dùng (của app nếu có header `X-LLM-*`, không thì của máy chủ): trả model, thời gian, câu trả lời hoặc lỗi của nhà cung cấp |
+| `GET /health` | `llm`: có LLM không; `llm_source`: `client` hoặc `server` |
+
+### Lộ trình cá nhân
+
+Lộ trình nền tảng chỉ có 15 bài. Sau đó (hoặc bất cứ lúc nào, ở mục "Lộ trình cá nhân" của tab Học) app xin backend bài kế tiếp qua `POST /v1/path/next`, gửi kèm điểm nói gần đây của từng âm, số lần nghe đúng/sai, kỹ năng, chủ đề, trình độ và 10 bài gần nhất. Không có bài cuối: học xong bài nào thì xin bài sau.
+
+Cách chọn bài nằm trong `backend/app/path.py` và luôn chạy, dù có LLM hay không:
+
+- **Âm cần luyện**: mỗi âm có một điểm "cần luyện". Âm đã có điểm nói thì dựa vào điểm đó (càng nhiều lần chấm càng tin), âm có lỗi nghe thì dựa vào tỷ lệ nghe nhầm. Âm chưa có dữ liệu thì dùng mức khó thường gặp của người Việt, tính nửa trọng số để âm bạn thật sự nói kém luôn được ưu tiên hơn âm chỉ khó trên lý thuyết. Âm vừa học ở bài trước bị hạ điểm để không lặp lại, trừ khi bài đó dưới 70 điểm thì được luyện thêm đúng một lượt.
+- **Độ khó** (3 bậc): giữ bậc của bài trước; hai bài gần nhất trung bình từ 85 điểm thì lên một bậc, dưới 60 thì xuống một bậc.
+- **Nội dung**: có LLM thì LLM chọn một trong 6 âm cần luyện nhất và viết từ, cặp âm tối thiểu, câu theo chủ đề của bạn. Không có LLM thì lấy từ kho có sẵn (`path_pool.py`). Trường hợp nào cũng vậy, mọi từ và câu đều được kiểm lại bằng từ điển phát âm mà bộ chấm dùng; mục nào không qua thì thay bằng mục trong kho.
+
+Mỗi bài ghi rõ lý do chọn (ví dụ "Bài này luyện /θ/ vì điểm nói /θ/ của bạn trung bình 52/100 qua 4 lần chấm"), để bạn biết bài được cá nhân hoá từ dữ liệu nào.
 
 ### Từ điển: vì sao không lấy trực tiếp từ Cambridge
 
@@ -76,24 +108,24 @@ Nếu sau này có giấy phép dữ liệu (Cambridge, Oxford đều có API tr
 Thư mục `deploy/` chứa cấu hình chạy backend bằng systemd, có HTTPS riêng ở cổng 8443, nên không đụng tới web server đang giữ cổng 80/443. Các bước trên Ubuntu 24.04:
 
 ```bash
-# trên VPS, với /opt/phonopath/backend là bản sao của thư mục backend/ và /opt/phonopath/deploy là deploy/
-useradd --system --home /opt/phonopath --shell /usr/sbin/nologin phonopath
-cd /opt/phonopath && python3 -m venv venv
+# trên VPS, với /opt/openspeak/backend là bản sao của thư mục backend/ và /opt/openspeak/deploy là deploy/
+useradd --system --home /opt/openspeak --shell /usr/sbin/nologin openspeak
+cd /opt/openspeak && python3 -m venv venv
 venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu
 venv/bin/pip install -r backend/requirements.txt
-cp deploy/phonopath.env.example /etc/phonopath.env && chmod 600 /etc/phonopath.env   # điền LLM nếu có
-mkdir -p hf download backend/cache && chown -R phonopath:phonopath /opt/phonopath
+cp deploy/openspeak.env.example /etc/openspeak.env && chmod 600 /etc/openspeak.env   # điền LLM nếu có
+mkdir -p hf download backend/cache && chown -R openspeak:openspeak /opt/openspeak
 ```
 
 Chứng chỉ: nếu máy chưa có tên miền, dùng `<ip-nối-bằng-gạch>.sslip.io` (trỏ sẵn về IP đó). Let's Encrypt kiểm tra qua thư mục `ACME_WEBROOT` mà web server ở cổng 80 đang phục vụ tại `/.well-known/acme-challenge/`:
 
 ```bash
-docker run --rm -v /opt/phonopath/letsencrypt:/etc/letsencrypt -v /opt/phonopath/letsencrypt-lib:/var/lib/letsencrypt \
+docker run --rm -v /opt/openspeak/letsencrypt:/etc/letsencrypt -v /opt/openspeak/letsencrypt-lib:/var/lib/letsencrypt \
   -v $ACME_WEBROOT:/var/www/certbot certbot/certbot certonly --webroot -w /var/www/certbot \
   -d 1-2-3-4.sslip.io --agree-tos --register-unsafely-without-email
-ln -sfn /opt/phonopath/letsencrypt/live/1-2-3-4.sslip.io /opt/phonopath/tls
+ln -sfn /opt/openspeak/letsencrypt/live/1-2-3-4.sslip.io /opt/openspeak/tls
 cp deploy/*.service deploy/*.timer /etc/systemd/system/
-systemctl daemon-reload && systemctl enable --now phonopath phonopath-renew.timer
+systemctl daemon-reload && systemctl enable --now openspeak openspeak-renew.timer
 ```
 
 Mô hình âm vị (khoảng 1,2 GB) được tải ở lần chấm đầu tiên; dịch vụ giới hạn 3 GB RAM để không lấn các dịch vụ khác. API hiện chưa có đăng nhập. Trước khi đặt `LLM_API_KEY` trên máy chủ mở ra Internet, nên thêm một lớp xác thực để người khác không dùng được khoá của bạn.
@@ -105,15 +137,15 @@ Cần Xcode 15 trở lên.
 ```bash
 cd ios
 brew install xcodegen   # nếu chưa có
-xcodegen generate       # sinh lại PhonoPath.xcodeproj sau khi thêm hoặc xoá file
-open PhonoPath.xcodeproj
+xcodegen generate       # sinh lại OpenSpeak.xcodeproj sau khi thêm hoặc xoá file
+open OpenSpeak.xcodeproj
 ```
 
 Chọn Team ký ứng dụng trong mục Signing rồi chạy. Trên Simulator, backend mặc định là `http://localhost:8000`. Trên iPhone thật, app dùng máy chủ ghi trong `ios/Config/Server.local.xcconfig` (file này không đưa lên git), hoặc địa chỉ nhập ở **Hồ sơ → Máy chủ AI**. Quay khẩu hình cần camera trước nên phải chạy trên máy thật.
 
 ```
 # ios/Config/Server.local.xcconfig — xcconfig coi "//" là chú thích nên viết https:/$()/
-PHONOPATH_SERVER_URL = https:/$()/may-chu-cua-ban:8443
+OPENSPEAK_SERVER_URL = https:/$()/may-chu-cua-ban:8443
 ```
 
 ### Tạo file IPA để cài thử
@@ -122,16 +154,16 @@ Không có tài khoản Apple Developer trả phí thì không ký được bả
 
 ```bash
 cd ios && xcodegen generate
-xcodebuild -project PhonoPath.xcodeproj -scheme PhonoPath -configuration Release \
+xcodebuild -project OpenSpeak.xcodeproj -scheme OpenSpeak -configuration Release \
   -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
-mkdir -p build/ipa/Payload && cp -R build/Build/Products/Release-iphoneos/PhonoPath.app build/ipa/Payload/
-(cd build/ipa && zip -qry PhonoPath.ipa Payload)
+mkdir -p build/ipa/Payload && cp -R build/Build/Products/Release-iphoneos/OpenSpeak.app build/ipa/Payload/
+(cd build/ipa && zip -qry OpenSpeak.ipa Payload)
 ```
 
 Ứng dụng ký bằng Apple ID miễn phí chỉ chạy được 7 ngày, sau đó cần cài (ký) lại. Trên iPhone phải bật **Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển**.
 
-Nếu có chứng chỉ phân phối kèm provisioning profile Ad Hoc (đã đăng ký UDID của máy), bundle ID của app phải trùng App ID trong profile. Profile không dùng dấu `*` mà app vẫn giữ `com.example.phonopath` thì iOS từ chối cài, và khi cài qua link sẽ không hiện thông báo gì. Ký lại sau khi đổi `CFBundleIdentifier` và nhúng `embedded.mobileprovision`, rồi đặt file `.ipa`, một `manifest.plist` và một trang có link `itms-services://?action=download-manifest&url=…/manifest.plist` vào thư mục `DOWNLOAD_DIR` của backend. Safari trên iPhone sẽ cài thẳng từ link đó; máy chủ phải có HTTPS hợp lệ.
+Nếu có chứng chỉ phân phối kèm provisioning profile Ad Hoc (đã đăng ký UDID của máy), bundle ID của app phải trùng App ID trong profile. Profile không dùng dấu `*` mà app vẫn giữ `com.example.openspeak` thì iOS từ chối cài, và khi cài qua link sẽ không hiện thông báo gì. Ký lại sau khi đổi `CFBundleIdentifier` và nhúng `embedded.mobileprovision`, rồi đặt file `.ipa`, một `manifest.plist` và một trang có link `itms-services://?action=download-manifest&url=…/manifest.plist` vào thư mục `DOWNLOAD_DIR` của backend. Safari trên iPhone sẽ cài thẳng từ link đó; máy chủ phải có HTTPS hợp lệ.
 
 Cấu trúc màn hình:
 
@@ -140,30 +172,36 @@ Giao diện tối nền tím than, 5 tab như ELSA:
 | Tab | Nội dung |
 |---|---|
 | Coach | Bộ đếm chuỗi ngày, XP, số âm đã thành thạo; thẻ Phân tích giọng nói, Huấn luyện phát âm, Huấn luyện hội thoại; bài tiếp theo, ôn tập |
-| Học | "Lộ trình phát âm của bạn": danh sách Unit, mỗi Unit gồm các "Bài N" (bài đang học nền trắng, chấm xanh), ôn tập, bảng IPA, luyện nghe/đọc/cặp âm |
+| Học | Hai mục "Nền tảng IPA" và "Lộ trình cá nhân". Nền tảng IPA: danh sách Unit, mỗi Unit gồm các "Bài N" (bài đang học nền trắng, chấm xanh), ôn tập, bảng IPA, luyện nghe/đọc/cặp âm. Lộ trình cá nhân: bài kế tiếp kèm lý do chọn, và các bài đã học |
 | Hội thoại | Danh sách tình huống, màn giới thiệu 3 nhiệm vụ, màn chat có micro |
 | Khám phá | Tra từ điển, 24 chủ đề từ vựng, bài từ mới do AI giao, thẻ ôn, sổ từ |
 | Tiến độ | Biểu đồ radar 6 kỹ năng, mức CEFR ước lượng (sau 5 lần chấm), XP 7 ngày, thống kê; nút bánh răng mở Hồ sơ và cài đặt |
 
 ### Chụp toàn bộ màn hình trên Simulator
 
-Target `PhonoPathUITests` gồm 11 bài test, đi qua mọi màn và lưu ảnh theo tên `<số test>-<bước>-<tên màn>.png`: onboarding, 5 tab, cả 7 bước của một bài học âm, bảng IPA và chi tiết âm, từng bước của hướng dẫn khẩu hình, ba bài luyện (nghe, đọc phiên âm, cặp âm) kể cả trạng thái đã trả lời đúng/sai và màn tổng kết, luyện nói và 5 tab kết quả, chi tiết từng từ, hội thoại, từ điển, thẻ từ, ôn tập, tiến độ, hồ sơ. Bài test thứ 11 mở lại các màn chính với cỡ chữ Accessibility XL. Cả bộ chạy khoảng 15 phút.
+Target `OpenSpeakUITests` gồm 15 bài test, đi qua mọi màn và lưu ảnh theo tên `<số test>-<bước>-<tên màn>.png`: onboarding, 5 tab, cả 7 bước của một bài học âm, bảng IPA và chi tiết âm, từng bước của hướng dẫn khẩu hình, ba bài luyện (nghe, đọc phiên âm, cặp âm) kể cả trạng thái đã trả lời đúng/sai và màn tổng kết, luyện nói và 5 tab kết quả, chi tiết từng từ, hội thoại, từ điển, thẻ từ, ôn tập, tiến độ, hồ sơ, các bước của một bài trong lộ trình cá nhân. Bài 11 và 14 mở lại các màn chính và các màn có nút thao tác với cỡ chữ Accessibility XL. Cả bộ chạy khoảng 20 phút.
 
-Mac không có micro thì dùng một file ghi âm có sẵn thay cho lần ghi, và bước tô ký hiệu được cho qua sau nét thứ hai (`PHONOPATH_EASY_TRACE`); cả hai chỉ có trong bản Debug. Backend phải đang chạy.
+Màn nào có nút thao tác chính (Tiếp tục, Phát, Bắt đầu ghi âm, Hoàn thành...) thì nút đó nằm trên một thanh ghim ở đáy màn hình, nội dung cuộn phía trên. Bài test kiểm tra điều này ở từng màn: nút phải bấm được và nằm trọn trong màn hình mà không cần cuộn, kể cả ở cỡ chữ lớn.
+
+Mac không có micro thì dùng một file ghi âm có sẵn thay cho lần ghi, và bước tô ký hiệu được cho qua sau nét thứ hai (`OPENSPEAK_EASY_TRACE`); cả hai chỉ có trong bản Debug. Backend phải đang chạy.
 
 ```bash
 cd ios
 xcodegen generate
-xcrun simctl privacy booted grant microphone com.example.phonopath
+xcrun simctl privacy booted grant microphone com.example.openspeak
 mkdir -p /tmp/shots
 TEST_RUNNER_SHOTS_DIR=/tmp/shots \
 TEST_RUNNER_FAKE_TAKE=$PWD/../backend/calib/speechocean762/WAVE/SPEAKER0001/000010011.WAV \
-xcodebuild -project PhonoPath.xcodeproj -scheme PhonoPath \
+xcodebuild -project OpenSpeak.xcodeproj -scheme OpenSpeak \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -derivedDataPath /Volumes/DATA/Xcode/DerivedData/PhonoPath CODE_SIGNING_ALLOWED=NO test
+  -derivedDataPath /Volumes/DATA/Xcode/DerivedData/OpenSpeak CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO test
 ```
 
+Bản simulator cần ký ad hoc (`CODE_SIGN_IDENTITY=-`); nếu tắt hẳn ký (`CODE_SIGNING_ALLOWED=NO`) thì Keychain từ chối lưu khoá LLM (mã -34018) và bài 15 sẽ hỏng.
+
 Thêm `TEST_RUNNER_BACKEND_URL=https://may-chu-cua-ban:8443` để app trong bài test gọi máy chủ đã deploy thay cho localhost.
+
+Bài 15 nhập LLM riêng trong Hồ sơ, kiểm tra lần lượt 3 định dạng, thử một model sai để chụp màn báo lỗi, rồi xin một bài lộ trình và đòi bài đó do AI soạn. Nó cần `TEST_RUNNER_LLM_BASE` (địa chỉ gốc, không có `/v1`) và `TEST_RUNNER_LLM_KEY`, cùng backend chạy với `LLM_ALLOW_PRIVATE_URLS=1` nếu địa chỉ là localhost. XCTest ghi lại chữ được gõ vào log kết quả, nên đừng đưa khoá thật: hãy dựng một relay cục bộ nhận một khoá giả rồi tự gắn khoá thật trước khi chuyển tiếp.
 
 Bộ ảnh gần nhất (iPhone 17, iOS 27.2) nằm ở `docs/ui-walkthrough/`; các cặp ảnh trước/sau của những lỗi giao diện đã sửa nằm ở `docs/ui-walkthrough/review/`. Simulator không có camera nên màn "Quay khẩu hình" chỉ chụp được trạng thái báo lỗi, và backend lúc chụp chưa cấu hình LLM nên hội thoại dừng ở thông báo lỗi máy chủ.
 
@@ -273,7 +311,7 @@ Phiên âm, mô tả khẩu hình, lộ trình bài học, cặp âm tối thi�
 cd backend && python -m tools.build_content
 ```
 
-Lệnh này ghi JSON vào `ios/PhonoPath/Resources/Content/`. Mẹo tiếng Việt, thứ tự bài học và câu luyện được sửa trong `backend/tools/build_content.py`.
+Lệnh này ghi JSON vào `ios/OpenSpeak/Resources/Content/`. Mẹo tiếng Việt, thứ tự bài học và câu luyện được sửa trong `backend/tools/build_content.py`.
 
 ## Theo Human Interface Guidelines của Apple
 
@@ -304,13 +342,13 @@ App đi theo **luồng trải nghiệm** của các app luyện phát âm: onboa
 - Biểu tượng: SF Symbols, được phép dùng trong app iOS.
 - Sơ đồ khẩu hình (mặt cắt khoang miệng và môi nhìn thẳng): vẽ bằng code từ bảng cấu âm, không dùng ảnh.
 - Âm mẫu cho từ đơn: **giọng người thật từ Wikimedia Commons**, ưu tiên bộ `En-us-<từ>.ogg` (giọng Mỹ), nếu không có thì Lingua Libre (giọng không xác định vùng). Backend tải một lần, giải mã sang WAV, lưu trong `backend/cache/` và app lưu trong Caches. Thẻ từ hiện tên người ghi âm, giấy phép (thường là CC BY-SA) và đường dẫn tới file gốc. Đo trên 96 trong 144 từ có sẵn: 77 có giọng Mỹ, 18 chỉ có Lingua Libre, 1 không có. Cụm từ, câu và từ không có bản ghi dùng giọng đọc của iOS. Commons giới hạn tốc độ tải (lỗi 429 nếu tải dồn dập), đủ cho một người dùng nhưng không nên tải trước hàng loạt.
-- Âm IPA đơn lẻ: giọng đọc của iOS. Muốn có âm IPA đơn lẻ chuẩn hơn, đặt file `phoneme_<ID>.m4a` (ví dụ `phoneme_TH.m4a`) vào `ios/PhonoPath/Resources/` và app sẽ ưu tiên dùng file này. Bộ audio IPA trên Wikimedia Commons phần lớn là CC BY-SA hoặc public domain; cần kiểm tra giấy phép và ghi công từng file.
+- Âm IPA đơn lẻ: giọng đọc của iOS. Muốn có âm IPA đơn lẻ chuẩn hơn, đặt file `phoneme_<ID>.m4a` (ví dụ `phoneme_TH.m4a`) vào `ios/OpenSpeak/Resources/` và app sẽ ưu tiên dùng file này. Bộ audio IPA trên Wikimedia Commons phần lớn là CC BY-SA hoặc public domain; cần kiểm tra giấy phép và ghi công từng file.
 - Dữ liệu và mô hình:
   - CMUdict: giấy phép kiểu BSD.
   - Wiktionary: CC BY-SA, phải ghi nguồn.
   - Mô hình âm vị `mrrubino/wav2vec2-large-xlsr-53-l2-arctic-phoneme`: thẻ mô hình ghi Apache 2.0, nhưng mô hình được huấn luyện trên L2-ARCTIC (CC BY-NC 4.0), nên chỉ dùng cho mục đích phi thương mại.
   - Praat/parselmouth: GPL. Chỉ chạy trên server nên không phân phối kèm app.
-- Biểu tượng ứng dụng (AppIcon) đang để trống. Cần thêm ảnh 1024×1024 trước khi build bản phát hành.
+- Biểu tượng ứng dụng: tự vẽ bằng code (vòng bong bóng thoại hở quanh 5 vạch sóng giọng nói, nét gradient trên nền trắng). Vẽ lại bằng `python ios/tools/make_app_icon.py` (cần Pillow); lệnh ghi đè `AppIcon.appiconset/AppIcon.png`.
 
 ## Đối chiếu với ELSA
 
@@ -335,7 +373,7 @@ Những gì thấy trong ảnh và đã làm theo:
 
 Ảnh cửa hàng không có màn kết quả chấm phát âm. Các phần sau lấy từ tên lớp trong APK và đã làm theo:
 
-| Thấy trong APK | PhonoPath |
+| Thấy trong APK | OpenSpeak |
 |---|---|
 | `PhonemeScoreType` với 3 mức `correct` / `almostCorrect` / `incorrect` | Mỗi âm có 3 mức: Đúng / Gần đúng / Sai (bị thay hoặc bị bỏ), kèm chú thích màu |
 | `AdvanceFeedbackTappedWordPage`, `WordPronunciationAnalysisView` | Chạm một từ để mở chi tiết từng âm, trọng âm và cách sửa khẩu hình |
@@ -351,7 +389,7 @@ Thấy trong APK nhưng **chưa làm**:
 - Đếm từ đệm như "um", "uh" (`SLFluencyTopFiller`).
 - Shadowing (`ShadowingPracticePage`), Vocab Coach, bảng xếp hạng.
 
-Ba mức âm của PhonoPath được xác định như sau:
+Ba mức âm của OpenSpeak được xác định như sau:
 - **Sai**: mô hình nghe ra âm khác, hoặc không nghe thấy âm.
 - **Đúng** và **Gần đúng**: phân định bằng ngưỡng điểm hiệu chỉnh trên speechocean762.
 

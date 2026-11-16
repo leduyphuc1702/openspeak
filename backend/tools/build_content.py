@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 from app import articulation, connected_speech, vocab  # noqa: E402
 from app.phonetics import PHONE_IPA, Lexicon, expected_intonation  # noqa: E402
 
-OUT = ROOT.parent / "ios" / "PhonoPath" / "Resources" / "Content"
+OUT = ROOT.parent / "ios" / "OpenSpeak" / "Resources" / "Content"
 LEX = Lexicon()
 
 # id, category, group, voiced, example words, tip (Vietnamese)

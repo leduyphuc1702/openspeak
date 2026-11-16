@@ -1,0 +1,26 @@
+[Unit]
+Description=OpenSpeak pronunciation API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=openspeak
+Group=openspeak
+WorkingDirectory=/opt/openspeak/backend
+EnvironmentFile=/etc/openspeak.env
+Environment=HF_HOME=/opt/openspeak/hf
+# /opt/openspeak/tls links to letsencrypt/live/<domain>; systemd reads the root-only key and hands it to the service user.
+LoadCredential=cert:/opt/openspeak/tls/fullchain.pem
+LoadCredential=key:/opt/openspeak/tls/privkey.pem
+ExecStart=/opt/openspeak/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1 --ssl-certfile %d/cert --ssl-keyfile %d/key
+Restart=on-failure
+RestartSec=5
+# Leave room for other services on a small VPS: the acoustic model needs about 2 GB.
+MemoryMax=3G
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

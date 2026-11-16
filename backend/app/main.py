@@ -4,26 +4,29 @@ import json
 import logging
 import mimetypes
 import os
+import time
 import urllib.parse
+from contextvars import ContextVar
 from functools import lru_cache
 from typing import List, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import articulation, connected_speech, roleplay, vocab
+from . import articulation, connected_speech, path, roleplay, vocab
 from .audio import load_audio
 from .dictionary import OpenDictionary, define
 from .feedback import pronunciation_feedback
-from .llm import Image, LLMClient, client_from_env
+from .llm import HEADER_BASE_URL, HEADER_MODEL, Image, LLMClient, LLMConfigError, client_from_env, client_from_headers
 from .phonetics import Lexicon, UnknownWordError, expected_intonation
 from .scoring import Assessor, NoSpeechError
 from .word_audio import WordAudio
 
-log = logging.getLogger("phonopath")
-app = FastAPI(title="PhonoPath pronunciation API", version="0.2.0")
+log = logging.getLogger("openspeak")
+app = FastAPI(title="OpenSpeak pronunciation API", version="0.2.0")
 
 # Optional folder of files to hand out (e.g. a test build of the iOS app), served at /download/.
 if os.getenv("DOWNLOAD_DIR"):
@@ -46,8 +49,49 @@ def get_assessor() -> Assessor:
 
 
 @lru_cache(maxsize=1)
-def get_llm() -> Optional[LLMClient]:
+def get_server_llm() -> Optional[LLMClient]:
     return client_from_env()
+
+
+_client_llm: ContextVar[Optional[LLMClient]] = ContextVar("client_llm", default=None)
+
+
+def get_llm() -> Optional[LLMClient]:
+    """The learner's own LLM if the app sent one with this request, else the server's."""
+    return _client_llm.get() or get_server_llm()
+
+
+class ClientLLM:
+    """Reads the LLM the learner set up in the app (X-LLM-* headers) for the current request.
+
+    The key is used for this request only; it is never stored or logged.
+    Set LLM_CLIENT_CONFIG=0 to ignore these headers.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or os.getenv("LLM_CLIENT_CONFIG", "1") == "0":
+            return await self.app(scope, receive, send)
+        headers = {k.decode("latin-1").lower(): v.decode("latin-1")
+                   for k, v in scope["headers"] if k.lower().startswith(b"x-llm-")}
+        if not (headers.get(HEADER_BASE_URL) or headers.get(HEADER_MODEL)):
+            return await self.app(scope, receive, send)
+        try:
+            client = await run_in_threadpool(client_from_headers, headers,
+                                             os.getenv("LLM_ALLOW_PRIVATE_URLS") == "1")
+        except LLMConfigError as e:
+            response = JSONResponse({"detail": {"code": "bad_llm_config", "message": str(e)}}, status_code=422)
+            return await response(scope, receive, send)
+        token = _client_llm.set(client)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _client_llm.reset(token)
+
+
+app.add_middleware(ClientLLM)
 
 
 @lru_cache(maxsize=1)
@@ -65,8 +109,45 @@ def _unknown(e: UnknownWordError) -> HTTPException:
 
 
 @app.get("/health")
-def health():
-    return {"ok": True, "llm": get_llm() is not None, "dictionary": get_dictionary().available}
+async def health():
+    source = "client" if _client_llm.get() else "server" if get_server_llm() else None
+    return {"ok": True, "llm": source is not None, "llm_source": source, "dictionary": get_dictionary().available}
+
+
+def _provider_error(body: str) -> str:
+    """The human-readable part of an OpenAI- or Anthropic-style error body, or the body itself."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return body
+    error = data.get("error", data) if isinstance(data, dict) else data
+    if isinstance(error, dict) and isinstance(error.get("message"), str):
+        return error["message"]
+    if isinstance(error, str):
+        return error
+    return body
+
+
+@app.post("/v1/llm/check")
+async def llm_check():
+    """One short call to the LLM in use, so the app can tell the learner whether their setup works."""
+    client = get_llm()
+    if client is None:
+        raise HTTPException(503, {"code": "llm_unavailable", "message": "Chưa cấu hình LLM."})
+    started = time.monotonic()
+    try:
+        reply = await run_in_threadpool(
+            client.chat_json, 'Bạn kiểm tra kết nối. Trả về JSON {"reply": "<một câu chào ngắn bằng tiếng Anh>"}.',
+            "ping")
+    except Exception as e:
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        body = getattr(getattr(e, "response", None), "text", "") or str(e)
+        raise HTTPException(502, {"code": "llm_failed", "status": status,
+                                  "message": f"LLM báo lỗi{f' {status}' if status else ''}: {_provider_error(body)[:300]}"})
+    return {"ok": True, "format": client.api_format, "model": client.model,
+            "source": "client" if _client_llm.get() else "server",
+            "reply": str(reply.get("reply", "") if isinstance(reply, dict) else reply)[:200],
+            "ms": round((time.monotonic() - started) * 1000)}
 
 
 @app.get("/v1/phonemize")
@@ -205,6 +286,14 @@ async def vocab_lesson(req: LessonRequest):
         log.exception("LLM lesson generation failed; serving starter words")
         return {"topic": req.topic, "title": vocab.TOPIC_TITLES.get(req.topic, req.topic), "source": "seed",
                 "words": vocab.seed_lesson(get_lexicon(), req.topic)}
+
+
+# --- Personal path ---
+
+@app.post("/v1/path/next")
+async def path_next(req: path.PathRequest):
+    """The next lesson of the endless personal path, planned from the learner's results."""
+    return await run_in_threadpool(path.next_lesson, get_llm(), get_lexicon(), req)
 
 
 # --- AI roleplay ---

@@ -8,7 +8,7 @@ ios/build/
 backend/calib/
 backend/cache/
 backend/data/
-ios/PhonoPath.xcodeproj/
+ios/OpenSpeak.xcodeproj/
 ios/Config/Server.local.xcconfig
 *.ipa
 .env

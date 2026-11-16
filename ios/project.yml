@@ -1,4 +1,4 @@
-name: PhonoPath
+name: OpenSpeak
 options:
   bundleIdPrefix: com.example
   deploymentTarget:
@@ -10,54 +10,54 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
 targets:
-  PhonoPath:
+  OpenSpeak:
     type: application
     platform: iOS
     sources:
-      - path: PhonoPath
+      - path: OpenSpeak
     configFiles:
       Debug: Config/Server.xcconfig
       Release: Config/Server.xcconfig
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.phonopath
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.openspeak
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     info:
-      path: PhonoPath/Info.plist
+      path: OpenSpeak/Info.plist
       properties:
-        CFBundleDisplayName: PhonoPath
+        CFBundleDisplayName: OpenSpeak
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
-        NSMicrophoneUsageDescription: PhonoPath cần micro để nghe và chấm phát âm của bạn.
-        NSCameraUsageDescription: PhonoPath dùng camera trước để đo khẩu hình môi khi bạn nói và gửi ảnh cận miệng cho AI nhận xét.
-        NSSpeechRecognitionUsageDescription: PhonoPath chuyển lời bạn nói thành chữ (ngay trên máy nếu được) để hội thoại với AI.
+        NSMicrophoneUsageDescription: OpenSpeak cần micro để nghe và chấm phát âm của bạn.
+        NSCameraUsageDescription: OpenSpeak dùng camera trước để đo khẩu hình môi khi bạn nói và gửi ảnh cận miệng cho AI nhận xét.
+        NSSpeechRecognitionUsageDescription: OpenSpeak chuyển lời bạn nói thành chữ (ngay trên máy nếu được) để hội thoại với AI.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSLocalNetworkUsageDescription: Kết nối tới máy chủ chấm phát âm trong mạng nội bộ.
-        PhonoPathServerURL: $(PHONOPATH_SERVER_URL)
-  PhonoPathUITests:
+        OpenSpeakServerURL: $(OPENSPEAK_SERVER_URL)
+  OpenSpeakUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: PhonoPathUITests
+      - path: OpenSpeakUITests
     dependencies:
-      - target: PhonoPath
+      - target: OpenSpeak
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.phonopath.uitests
-        TEST_TARGET_NAME: PhonoPath
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.openspeak.uitests
+        TEST_TARGET_NAME: OpenSpeak
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  PhonoPath:
+  OpenSpeak:
     build:
       targets:
-        PhonoPath: all
-        PhonoPathUITests: [test]
+        OpenSpeak: all
+        OpenSpeakUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - PhonoPathUITests
+        - OpenSpeakUITests
