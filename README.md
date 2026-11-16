@@ -131,6 +131,8 @@ mkdir -p build/ipa/Payload && cp -R build/Build/Products/Release-iphoneos/PhonoP
 
 Ứng dụng ký bằng Apple ID miễn phí chỉ chạy được 7 ngày, sau đó cần cài (ký) lại. Trên iPhone phải bật **Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển**.
 
+Nếu có chứng chỉ phân phối kèm provisioning profile Ad Hoc (đã đăng ký UDID của máy), bundle ID của app phải trùng App ID trong profile. Profile không dùng dấu `*` mà app vẫn giữ `com.example.phonopath` thì iOS từ chối cài, và khi cài qua link sẽ không hiện thông báo gì. Ký lại sau khi đổi `CFBundleIdentifier` và nhúng `embedded.mobileprovision`, rồi đặt file `.ipa`, một `manifest.plist` và một trang có link `itms-services://?action=download-manifest&url=…/manifest.plist` vào thư mục `DOWNLOAD_DIR` của backend. Safari trên iPhone sẽ cài thẳng từ link đó; máy chủ phải có HTTPS hợp lệ.
+
 Cấu trúc màn hình:
 
 Giao diện tối nền tím than, 5 tab như ELSA:

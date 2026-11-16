@@ -27,8 +27,9 @@ app = FastAPI(title="PhonoPath pronunciation API", version="0.2.0")
 
 # Optional folder of files to hand out (e.g. a test build of the iOS app), served at /download/.
 if os.getenv("DOWNLOAD_DIR"):
-    # Unknown extensions fall back to text/plain, which Safari would try to display.
+    # Unknown extensions fall back to text/plain. Over-the-air installs need these two types.
     mimetypes.add_type("application/octet-stream", ".ipa")
+    mimetypes.add_type("text/xml", ".plist")
     app.mount("/download", StaticFiles(directory=os.environ["DOWNLOAD_DIR"]), name="download")
 
 
