@@ -91,3 +91,24 @@ def test_phonemize(monkeypatch):
     c = client(monkeypatch, ["θ"])
     resp = c.get("/v1/phonemize", params={"text": "Hello, think!"})
     assert [w["ipa"] for w in resp.json()["words"]] == ["həˈloʊ", "θɪŋk"]
+
+
+def test_free_speech_skips_words_the_lexicon_lacks(monkeypatch):
+    c = client(monkeypatch, ["θ", "ɪ", "ŋ", "k"])
+    files = {"audio": ("take.wav", wav_bytes(), "audio/wav")}
+    resp = c.post("/v1/assess", data={"text": "think zzqx?", "feedback": "false", "skip_unknown": "true"}, files=files)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["skipped_words"] == ["zzqx"] and [w["word"] for w in body["words"]] == ["think"]
+    strict = c.post("/v1/assess", data={"text": "think zzqx?", "feedback": "false"},
+                    files={"audio": ("take.wav", wav_bytes(), "audio/wav")})
+    assert strict.status_code == 422 and strict.json()["detail"]["words"] == ["zzqx"]
+    nothing = c.post("/v1/assess", data={"text": "zzqx", "feedback": "false", "skip_unknown": "true"},
+                     files={"audio": ("take.wav", wav_bytes(), "audio/wav")})
+    assert nothing.status_code == 422
+
+
+def test_known_words_only_keeps_the_question_mark():
+    lexicon = Lexicon()
+    assert main.known_words_only(lexicon, "Do you think zzqx?") == ("Do you think?", ["zzqx"])
+    assert main.known_words_only(lexicon, "Zzqx is fine") == ("is fine.", ["Zzqx"])

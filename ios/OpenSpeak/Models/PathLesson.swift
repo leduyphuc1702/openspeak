@@ -36,6 +36,8 @@ struct PathLesson: Codable, Hashable, Identifiable {
     let words: [Word]
     let pairs: [Pair]
     let sentences: [Sentence]
+    /// Listening and spelling questions; missing in lessons saved before the server wrote them.
+    let exercises: [Exercise]?
     /// "llm" when a language model wrote the lesson, "rules" when the server assembled it from its own word lists.
     let source: String
 
@@ -84,4 +86,6 @@ struct PathRequest: Encodable {
     let skills: [String: Int]
     let history: [Record]
     let recentWords: [String]
+    /// Set when asking for a checkpoint exam instead of a lesson.
+    var examIndex: Int? = nil
 }

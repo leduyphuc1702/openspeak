@@ -2,10 +2,10 @@
 
 Ứng dụng iOS (SwiftUI) học phát âm tiếng Anh, giao diện theo cấu trúc của ELSA Speak (xem phần "Đối chiếu với ELSA"), dùng cho cá nhân. Gồm bốn mảng:
 
-1. **Phiên âm**: học 41 âm IPA theo lộ trình nền tảng 15 bài, mỗi âm học kỹ như trẻ mẫu giáo học chữ cái. Các bước là làm quen (sơ đồ khẩu hình và từng bước đặt môi, hàm, lưỡi), nhận mặt ký hiệu, tô ký hiệu bằng tay, nghe phân biệt, tìm âm trong từ, rồi nói. Sau đó ôn lại theo lịch lặp ngắt quãng. Song song là **lộ trình cá nhân không có điểm dừng**: mỗi bài được lập từ kết quả của chính bạn (xem phần "Lộ trình cá nhân").
+1. **Phiên âm**: học 41 âm IPA theo lộ trình nền tảng 15 bài, mỗi âm học kỹ như trẻ mẫu giáo học chữ cái. Các bước là làm quen (sơ đồ khẩu hình và từng bước đặt môi, hàm, lưỡi), nhận mặt ký hiệu, tô ký hiệu bằng tay (phải tô kín ký hiệu, không lệch ra ngoài, đủ từng nét), nghe và nhận âm (câu hỏi do LLM ra theo chủ đề của bạn, xem phần "Câu hỏi nghe"), rồi nói. Sau đó ôn lại theo lịch lặp ngắt quãng. Song song là **lộ trình cá nhân không có điểm dừng**: mỗi bài được lập từ kết quả của chính bạn (xem phần "Lộ trình cá nhân").
 2. **Luyện nói**: AI chấm **trực tiếp từ âm thanh** từng âm vị, trọng âm, ngữ điệu, độ trôi chảy và nối âm (linking, flap t, nuốt âm...). Điểm đã hiệu chỉnh theo điểm chuyên gia (xem bên dưới). Có **khẩu hình động cho cả từ và cả câu** (xem phần "Khẩu hình động"), và chế độ **quay video miệng**: điện thoại đo môi từng khung hình, sau đó LLM thị giác xem ảnh cận miệng để chỉ cách sửa.
 3. **Từ vựng**: 24 chủ đề cho người đi làm (họp, email, thuyết trình, small talk, gọi điện, đàm phán, dự án, khách hàng, tiền bạc, nêu ý kiến, cảm xúc, đi lại, thuê nhà, khẩn cấp...). LLM giao từ và cụm từ mới theo chủ đề và trình độ. Mỗi từ có thẻ học (nghĩa, IPA, ví dụ, **giọng người thật** từ Wikimedia Commons, nói, khẩu hình), sổ từ và ôn tập. Có thêm tra từ điển.
-4. **Hội thoại AI**: nhập vai tình huống công sở (8 tình huống có sẵn hoặc LLM tạo theo chủ đề bạn gõ). Mỗi tình huống có 3 nhiệm vụ. Bạn nói (nhận dạng giọng nói ngay trên máy) hoặc gõ; AI đáp lại, sửa lỗi câu, gợi ý cách nói tự nhiên hơn, đánh dấu nhiệm vụ đã xong. Câu nào cũng bấm được "Luyện nói câu này" để chấm phát âm.
+4. **Hội thoại AI**: nhập vai tình huống công sở (8 tình huống có sẵn hoặc LLM tạo theo chủ đề bạn gõ). Mỗi tình huống có 3 nhiệm vụ. Bạn nói hoặc gõ; AI đáp lại, sửa lỗi câu, gợi ý cách nói tự nhiên hơn, đánh dấu nhiệm vụ đã xong. Lượt nói được ghi thành file âm thanh; nhận dạng giọng nói trên máy chỉ lấy ra chữ, còn chính bản ghi đó được gửi tới mô hình âm vị của backend để chấm phát âm từng âm và ngữ điệu, ngay dưới bong bóng chat (xem phần "Hội thoại: chấm phát âm từng lượt").
 
 ```
 ios/       Ứng dụng SwiftUI (iOS 17+), project sinh bằng XcodeGen
@@ -45,10 +45,10 @@ export LLM_BASE_URL=https://api.openai.com/v1   # Anthropic: https://api.anthrop
 export LLM_API_KEY=sk-...
 export LLM_MODEL=gpt-4o-mini            # nhận xét phát âm, giao từ vựng, nghĩa từ, lộ trình
 export LLM_VISION_MODEL=gpt-4o-mini     # xem ảnh cận miệng (mô hình phải nhận ảnh)
-export LLM_TIMEOUT=60                   # giây
+export LLM_TIMEOUT=160                  # giây; mô hình có "thinking" ra cả bài kiểm tra mất khoảng 110 giây
 ```
 
-Cả 3 định dạng đều gửi được ảnh và yêu cầu trả JSON. Nếu nhà cung cấp từ chối một tham số tuỳ chọn (`temperature`, `response_format`, `text`), backend bỏ tham số đó và gọi lại một lần.
+Cả 3 định dạng đều gửi được ảnh và yêu cầu trả JSON. Với `anthropic-messages`, `max_tokens` là 16000 vì các model có thinking dùng một phần ngân sách này để nghĩ trước khi viết; với 4096, claude-sonnet-5-5 hết ngân sách khi còn đang nghĩ và không trả chữ nào. Nếu nhà cung cấp từ chối một tham số tuỳ chọn (`temperature`, `response_format`, `text`), backend bỏ tham số đó và gọi lại một lần.
 
 **Khoá của máy chủ hay của người học.** Có hai cách, dùng được cùng lúc:
 
@@ -61,7 +61,7 @@ LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận
 
 | Endpoint | Việc |
 |---|---|
-| `POST /v1/assess` | Chấm câu nói: âm vị, trọng âm, ngữ điệu, trôi chảy, nối âm |
+| `POST /v1/assess` | Chấm câu nói: âm vị, trọng âm, ngữ điệu, trôi chảy, nối âm. `skip_unknown=true` (cho lời nói tự do) bỏ qua các từ không có trong từ điển phát âm thay vì báo lỗi, và trả chúng trong `skipped_words` |
 | `GET /v1/phonemize?text=` | Phiên âm, phiên âm nối âm (`‿`), chỗ nối và ngữ điệu cần có |
 | `POST /v1/articulation-feedback` | Số đo môi theo từng âm (+ tối đa 8 ảnh JPEG cận miệng) → nhận xét khẩu hình |
 | `GET /v1/articulation/{id}` | Mô tả cấu âm và các bước tiếng Việt cho một âm |
@@ -71,7 +71,9 @@ LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận
 | `GET /v1/roleplay/scenarios` | 8 tình huống hội thoại công sở có sẵn |
 | `POST /v1/roleplay/start` | Lấy tình huống có sẵn (`scenario_id`) hoặc để LLM tạo theo `topic` |
 | `POST /v1/roleplay/turn` | Một lượt hội thoại: câu đáp, lỗi đã sửa, cách nói hay hơn, nhiệm vụ đã xong, gợi ý |
-| `POST /v1/path/next` | Bài tiếp theo của lộ trình cá nhân, lập từ điểm nói, lỗi nghe và các bài đã học |
+| `POST /v1/path/next` | Bài tiếp theo của lộ trình cá nhân, lập từ điểm nói, lỗi nghe và các bài đã học; kèm `exercises` (câu hỏi nghe) |
+| `POST /v1/path/exam` | Bài kiểm tra sau mỗi 4 bài của lộ trình cá nhân |
+| `POST /v1/exercises` | Câu hỏi nghe cho một âm (`sound`, `contrasts`, `topics`, `level`, `avoid_words`) |
 | `POST /v1/llm/check` | Gọi thử LLM đang dùng (của app nếu có header `X-LLM-*`, không thì của máy chủ): trả model, thời gian, câu trả lời hoặc lỗi của nhà cung cấp |
 | `GET /health` | `llm`: có LLM không; `llm_source`: `client` hoặc `server` |
 
@@ -86,6 +88,33 @@ Cách chọn bài nằm trong `backend/app/path.py` và luôn chạy, dù có LL
 - **Nội dung**: có LLM thì LLM chọn một trong 6 âm cần luyện nhất và viết từ, cặp âm tối thiểu, câu theo chủ đề của bạn. Không có LLM thì lấy từ kho có sẵn (`path_pool.py`). Trường hợp nào cũng vậy, mọi từ và câu đều được kiểm lại bằng từ điển phát âm mà bộ chấm dùng; mục nào không qua thì thay bằng mục trong kho.
 
 Mỗi bài ghi rõ lý do chọn (ví dụ "Bài này luyện /θ/ vì điểm nói /θ/ của bạn trung bình 52/100 qua 4 lần chấm"), để bạn biết bài được cá nhân hoá từ dữ liệu nào.
+
+### Câu hỏi nghe
+
+Không còn câu hỏi kiểu "Từ này có âm /iː/ không?" hay "chọn âm có trong từ eat": người học trả lời được mà không cần nghe. Mọi câu hỏi trắc nghiệm (bài nền tảng, bài lộ trình, bài kiểm tra) thuộc một trong ba loại, đều do LLM ra đề rồi được backend kiểm lại trong `backend/app/exercises.py`:
+
+| Loại | Người học làm gì | Backend kiểm |
+|---|---|---|
+| Cặp âm (`pair`) | Nghe một từ trong cặp âm tối thiểu (sit/seat), chọn từ đã nghe | Hai từ thật sự chỉ khác nhau ở âm đang học |
+| Điền chỗ trống (`gap`) | Nghe cả câu, chọn từ đã lấp chỗ trống ("The sales rep wrote a ___ answer." wrong/long). Cả hai từ đều hợp nghĩa, nên phải nghe mới chọn đúng | Hai từ là cặp âm tối thiểu, từ đáp án có trong câu, câu đủ ngắn theo độ khó |
+| Chính tả bẫy (`spelling`) | 3–4 từ viết giống nhau, chọn từ có âm đang học (teach / bread / break: chỉ teach có /iː/). Phiên âm chỉ hiện sau khi trả lời | Backend tự tính đáp án từ từ điển phát âm: đúng một từ có âm đó (ở âm tiết nhấn nếu là nguyên âm), các từ còn lại không có âm đó ở bất kỳ cách đọc nào |
+
+LLM nhận chủ đề người học đã chọn, một "góc nhìn" cho mỗi chủ đề (đổi mỗi lần, ví dụ "lỗi và sự cố", "con số và thời gian") và các từ khoá đã dùng gần đây để tránh lặp. Câu nào sai thì bị bỏ; thiếu thì bù bằng câu ghép từ kho từ của máy chủ (cặp âm và chính tả bẫy theo bảng chữ viết của từng âm). Màn câu hỏi ghi rõ đề do AI ra hay ghép tự động.
+
+### Bài kiểm tra trong lộ trình cá nhân
+
+Cứ học xong 4 bài lộ trình thì có một bài kiểm tra (`backend/app/exam.py`), hiện ngay sau bài thứ 4 với tên "Bài kiểm tra N". Đề gồm câu hỏi nghe (mỗi âm một cặp âm, thêm điền chỗ trống và chính tả bẫy), 6 từ để nói và 3 câu để đọc, về các âm của 4 bài vừa học và âm bạn cần nhất.
+
+- Mỗi âm có ít nhất một từ để nói; câu đọc dành cho âm yếu nhất trước.
+- Từ khoá không lặp trong đề và không trùng với các bài, bài kiểm tra gần đây.
+- Các chủ đề được rải đều; màn giới thiệu ghi số mục của từng chủ đề.
+- Điểm bài kiểm tra là trung bình của điểm nghe và điểm nói, kèm điểm nói từng âm; điểm nói được đưa vào dữ liệu lập bài sau.
+
+### Hội thoại: chấm phát âm từng lượt
+
+Nhận dạng giọng nói (Apple Speech) chỉ cho biết bạn nói chữ gì; nó cố đoán ra chữ đúng nên không dùng để chấm phát âm. Vì vậy mỗi lượt nói được ghi thành WAV. App gửi chữ nhận dạng được cho AI để hội thoại tiếp, đồng thời gửi chính bản ghi đó cùng chữ tới `POST /v1/assess` (`skip_unknown=true`). Mô hình âm vị nghe trực tiếp âm thanh và chấm từng âm, trọng âm và ngữ điệu, giống màn luyện nói.
+
+Dưới lượt nói hiện vòng điểm, điểm phát âm và ngữ điệu, giọng lên hay xuống ở cuối câu, hai âm yếu nhất và từ chứa chúng; chữ trong bong bóng tô màu theo điểm từng từ. Chạm vào thẻ để xem đủ kết quả và luyện lại câu đó. Nếu máy nghe nhầm chữ, bạn sửa lại chữ và bản ghi được chấm lại theo chữ đúng.
 
 ### Từ điển: vì sao không lấy trực tiếp từ Cambridge
 
@@ -179,11 +208,13 @@ Giao diện tối nền tím than, 5 tab như ELSA:
 
 ### Chụp toàn bộ màn hình trên Simulator
 
-Target `OpenSpeakUITests` gồm 15 bài test, đi qua mọi màn và lưu ảnh theo tên `<số test>-<bước>-<tên màn>.png`: onboarding, 5 tab, cả 7 bước của một bài học âm, bảng IPA và chi tiết âm, từng bước của hướng dẫn khẩu hình, ba bài luyện (nghe, đọc phiên âm, cặp âm) kể cả trạng thái đã trả lời đúng/sai và màn tổng kết, luyện nói và 5 tab kết quả, chi tiết từng từ, hội thoại, từ điển, thẻ từ, ôn tập, tiến độ, hồ sơ, các bước của một bài trong lộ trình cá nhân. Bài 11 và 14 mở lại các màn chính và các màn có nút thao tác với cỡ chữ Accessibility XL. Cả bộ chạy khoảng 20 phút.
+Target `OpenSpeakUITests` gồm 18 bài test, đi qua mọi màn và lưu ảnh theo tên `<số test>-<bước>-<tên màn>.png`: onboarding, 5 tab, cả 7 bước của một bài học âm, bảng IPA và chi tiết âm, từng bước của hướng dẫn khẩu hình, ba bài luyện (nghe, đọc phiên âm, cặp âm) kể cả trạng thái đã trả lời đúng/sai và màn tổng kết, luyện nói và 5 tab kết quả, chi tiết từng từ, hội thoại, từ điển, thẻ từ, ôn tập, tiến độ, hồ sơ, các bước của một bài trong lộ trình cá nhân, hội thoại bằng giọng nói: lượt nói hiện ngay sau khi dừng ghi, được chấm phát âm và ngữ điệu, câu đáp của AI nằm trong màn hình (bài 16), bài kiểm tra của lộ trình (bài 17) và việc tô ký hiệu một nét hoặc vẽ lung tung không được qua (bài 18). Bài 11 và 14 mở lại các màn chính và các màn có nút thao tác với cỡ chữ Accessibility XL. Cả bộ chạy khoảng 20 phút.
 
 Màn nào có nút thao tác chính (Tiếp tục, Phát, Bắt đầu ghi âm, Hoàn thành...) thì nút đó nằm trên một thanh ghim ở đáy màn hình, nội dung cuộn phía trên. Bài test kiểm tra điều này ở từng màn: nút phải bấm được và nằm trọn trong màn hình mà không cần cuộn, kể cả ở cỡ chữ lớn.
 
-Mac không có micro thì dùng một file ghi âm có sẵn thay cho lần ghi, và bước tô ký hiệu được cho qua sau nét thứ hai (`OPENSPEAK_EASY_TRACE`); cả hai chỉ có trong bản Debug. Backend phải đang chạy.
+Mac không có micro thì dùng một file ghi âm có sẵn thay cho lần ghi, nhận dạng giọng nói trả một câu cố định (`OPENSPEAK_FAKE_TRANSCRIPT`), và bước tô ký hiệu được cho qua sau nét thứ hai (`OPENSPEAK_EASY_TRACE`, trừ bài 18). `OPENSPEAK_SEED_PATH=exam` tạo sẵn 4 bài lộ trình đã học để bài kiểm tra đến hạn. Tất cả chỉ có trong bản Debug. Backend phải đang chạy.
+
+Target `OpenSpeakTests` (unit test) kiểm cách chấm bài tô ký hiệu: tô kín thì qua, một nét, nét chỉ qua một phần của ký hiệu hoặc vẽ cạnh ký hiệu thì không. Chạy bằng `-only-testing:OpenSpeakTests`.
 
 ```bash
 cd ios
@@ -203,7 +234,7 @@ Thêm `TEST_RUNNER_BACKEND_URL=https://may-chu-cua-ban:8443` để app trong bà
 
 Bài 15 nhập LLM riêng trong Hồ sơ, kiểm tra lần lượt 3 định dạng, thử một model sai để chụp màn báo lỗi, rồi xin một bài lộ trình và đòi bài đó do AI soạn. Nó cần `TEST_RUNNER_LLM_BASE` (địa chỉ gốc, không có `/v1`) và `TEST_RUNNER_LLM_KEY`, cùng backend chạy với `LLM_ALLOW_PRIVATE_URLS=1` nếu địa chỉ là localhost. XCTest ghi lại chữ được gõ vào log kết quả, nên đừng đưa khoá thật: hãy dựng một relay cục bộ nhận một khoá giả rồi tự gắn khoá thật trước khi chuyển tiếp.
 
-Bộ ảnh gần nhất (iPhone 17, iOS 27.2) nằm ở `docs/ui-walkthrough/`; các cặp ảnh trước/sau của những lỗi giao diện đã sửa nằm ở `docs/ui-walkthrough/review/`. Simulator không có camera nên màn "Quay khẩu hình" chỉ chụp được trạng thái báo lỗi, và backend lúc chụp chưa cấu hình LLM nên hội thoại dừng ở thông báo lỗi máy chủ.
+Bộ ảnh gần nhất (iPhone 17, iOS 27.2) nằm ở `docs/ui-walkthrough/`; các cặp ảnh trước/sau của những lỗi giao diện đã sửa nằm ở `docs/ui-walkthrough/review/`. Simulator không có camera nên màn "Quay khẩu hình" chỉ chụp được trạng thái báo lỗi. Ảnh của bài 03, 12, 16 và 17 chụp với backend có LLM (claude-sonnet-5-5 qua relay cục bộ), nên câu hỏi, bài kiểm tra và câu đáp trong hội thoại là do AI viết; các ảnh còn lại chụp khi chưa có LLM nên hội thoại ở bài 06 dừng ở thông báo lỗi máy chủ.
 
 ## Cách AI "nghe" phát âm
 
@@ -324,7 +355,7 @@ Giao diện đã được rà theo [HIG](https://developer.apple.com/design/huma
 | Vùng chạm tối thiểu 44×44 pt (Accessibility) | Nút gửi tin, chip âm vị, nút đóng bài học, nút lùi/tiến âm trong trình phát khẩu hình được nới tới 44 hoặc 52 pt |
 | Hỗ trợ cỡ chữ lớn, ít nhất 200% (Accessibility) | Chữ dùng kiểu chữ hệ thống (Dynamic Type) thay cho cỡ cố định. Ở cỡ Accessibility, hàng thống kê và mục tiêu ngày ở trang chủ, thanh điểm chuyển sang xếp dọc; ô bảng IPA rộng theo cỡ chữ; màn câu hỏi cuộn được khi không đủ chỗ. Trong "Tập từng bước", mỗi lần chuyển bước thẻ tự cuộn để hình khẩu hình hiện cùng lời hướng dẫn, và nút "Bước trước" thu thành mũi tên (VoiceOver vẫn đọc đủ tên) để hai nút nằm chung một hàng |
 | Chuyển động phải tắt được (Motion) | Hình khẩu hình, trình phát khẩu hình, vòng điểm và quầng micro không chuyển động khi bật Giảm chuyển động |
-| Hạn chế phần tử giới hạn thời gian (Accessibility) | Bước "Nhận mặt ký hiệu" và "Tìm âm trong từ" không còn tự chuyển sau 0,6–0,7 giây. Người học thấy phản hồi rồi tự bấm "Tiếp" |
+| Hạn chế phần tử giới hạn thời gian (Accessibility) | Bước "Nhận mặt ký hiệu" và các câu hỏi nghe không tự chuyển sau 0,6–0,7 giây. Người học thấy phản hồi rồi tự bấm "Tiếp" |
 | Việc phức tạp mở dạng modal toàn màn hình; luôn có cách đóng rõ ràng (Modality); tab bar chỉ được che khi có modal (Tab bars) | Bài học, ôn tập, bài luyện, luyện nói và hội thoại mở dạng modal toàn màn hình, không còn ẩn tab bar trong màn được đẩy vào |
 | Dùng nút Close chuẩn, không dùng chữ "Đóng" (Toolbars) | Modal và sheet dùng nút đóng của hệ thống (`Button(role: .close)` trên iOS 26, biểu tượng xmark trên iOS cũ hơn) |
 | Sheet đổi được cỡ thì có thanh kéo (Sheets) | Sheet chi tiết từ hiện thanh kéo |

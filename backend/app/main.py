@@ -16,12 +16,12 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import articulation, connected_speech, path, roleplay, vocab
+from . import articulation, connected_speech, exam, exercises, path, roleplay, vocab
 from .audio import load_audio
 from .dictionary import OpenDictionary, define
 from .feedback import pronunciation_feedback
 from .llm import HEADER_BASE_URL, HEADER_MODEL, Image, LLMClient, LLMConfigError, client_from_env, client_from_headers
-from .phonetics import Lexicon, UnknownWordError, expected_intonation
+from .phonetics import PHONE_IPA, Lexicon, UnknownWordError, expected_intonation, tokenize
 from .scoring import Assessor, NoSpeechError
 from .word_audio import WordAudio
 
@@ -108,6 +108,20 @@ def _unknown(e: UnknownWordError) -> HTTPException:
     return HTTPException(422, {"code": "unknown_words", "words": e.words})
 
 
+def known_words_only(lexicon: Lexicon, text: str):
+    """The text without words the lexicon lacks, keeping a final '?' so intonation is still judged."""
+    kept, skipped = [], []
+    for word in tokenize(text):
+        try:
+            lexicon.lookup(word)
+            kept.append(word)
+        except UnknownWordError:
+            skipped.append(word)
+    if not kept:
+        raise _unknown(UnknownWordError(skipped))
+    return " ".join(kept) + ("?" if text.strip().endswith("?") else "."), skipped
+
+
 @app.get("/health")
 async def health():
     source = "client" if _client_llm.get() else "server" if get_server_llm() else None
@@ -177,9 +191,15 @@ async def assess(
     audio: UploadFile = File(...),
     reference_audio: Optional[UploadFile] = File(None),
     feedback: bool = Form(True),
+    skip_unknown: bool = Form(False),
 ):
+    """skip_unknown is for free speech (a recognised conversation turn): words missing from the
+    pronunciation dictionary, such as names, are left out of the score instead of failing it."""
     wav = load_audio(await audio.read())
     ref = load_audio(await reference_audio.read()) if reference_audio is not None else None
+    skipped: List[str] = []
+    if skip_unknown:
+        text, skipped = known_words_only(get_lexicon(), text)
     try:
         result = await run_in_threadpool(get_assessor().assess, wav, text, ref)
     except UnknownWordError as e:
@@ -189,6 +209,7 @@ async def assess(
     except ValueError as e:
         raise HTTPException(422, {"code": "bad_audio", "message": str(e)})
 
+    result["skipped_words"] = skipped
     result["feedback"] = None
     if feedback:
         try:
@@ -294,6 +315,20 @@ async def vocab_lesson(req: LessonRequest):
 async def path_next(req: path.PathRequest):
     """The next lesson of the endless personal path, planned from the learner's results."""
     return await run_in_threadpool(path.next_lesson, get_llm(), get_lexicon(), req)
+
+
+@app.post("/v1/path/exam")
+async def path_exam(req: exam.ExamRequest):
+    """A checkpoint exam on the sounds of the last few path lessons, written for the learner's topics."""
+    return await run_in_threadpool(exam.next_exam, get_llm(), get_lexicon(), req)
+
+
+@app.post("/v1/exercises")
+async def sound_exercises(req: exercises.ExerciseRequest):
+    """Listening and spelling questions for one sound (the foundation course)."""
+    if req.sound not in PHONE_IPA:
+        raise HTTPException(422, {"code": "unknown_sound", "sound": req.sound})
+    return await run_in_threadpool(exercises.for_sound, get_llm(), get_lexicon(), req)
 
 
 # --- AI roleplay ---

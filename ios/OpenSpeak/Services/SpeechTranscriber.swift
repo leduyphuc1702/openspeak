@@ -1,67 +1,95 @@
 @preconcurrency import AVFoundation
-import Observation
 @preconcurrency import Speech
 
-/// Live English speech-to-text for conversation turns, on-device when the phone supports it.
-/// (Pronunciation scoring does not use this; it uses the phoneme model on the backend.)
-@MainActor
-@Observable
-final class SpeechTranscriber {
-    private(set) var text = ""
-    private(set) var isRunning = false
-
-    private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    private let engine = AVAudioEngine()
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
-
-    func authorize() async -> Bool {
-        let speech = await withCheckedContinuation { continuation in
+/// English speech-to-text for a recorded conversation turn, on-device when the phone supports it.
+/// It only finds out which words were said; how they were pronounced is scored from the same
+/// recording by the phoneme model on the backend.
+enum SpeechTranscriber {
+    static func authorize() async -> Bool {
+        await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0 == .authorized) }
         }
-        guard speech else { return false }
-        return await AVAudioApplication.requestRecordPermission()
     }
 
-    func start() throws {
-        guard let recognizer, recognizer.isAvailable else { throw TranscriberError.unavailable }
-        SpeechPlayer.shared.stop()
-        AudioSessionConfigurator.configure()
-        text = ""
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = true
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
-        let input = engine.inputNode
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
-            request.append(buffer)
+    /// The words in the recording. `hints` are phrases the learner is likely to say, which helps
+    /// the recogniser pick the intended word when the pronunciation is off.
+    static func transcribe(_ url: URL, hints: [String] = []) async throws -> String {
+        #if DEBUG
+        // The simulator's recogniser does not start; UI tests pass the words of the prepared take.
+        if let fake = ProcessInfo.processInfo.environment["OPENSPEAK_FAKE_TRANSCRIPT"] { return fake }
+        #endif
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")), recognizer.isAvailable else {
+            throw TranscriberError.unavailable
         }
-        engine.prepare()
-        try engine.start()
-        task = recognizer.recognitionTask(with: request) { [weak self] result, _ in
-            guard let result else { return }
-            let transcript = result.bestTranscription.formattedString
-            Task { @MainActor in self?.text = transcript }
+        do {
+            return try await run(recognizer, url: url, hints: hints, onDevice: recognizer.supportsOnDeviceRecognition)
+        } catch TranscriberError.noSpeech {
+            throw TranscriberError.noSpeech
+        } catch {
+            // The on-device model can be missing (not downloaded yet); Apple's server recogniser still works.
+            guard recognizer.supportsOnDeviceRecognition else { throw error }
+            return try await run(recognizer, url: url, hints: hints, onDevice: false)
         }
-        self.request = request
-        isRunning = true
     }
 
-    /// Stops listening and returns the transcript after the recognizer settles.
-    func stop() async -> String {
-        guard isRunning else { return text }
-        engine.stop()
-        engine.inputNode.removeTap(onBus: 0)
-        request?.endAudio()
-        isRunning = false
-        try? await Task.sleep(nanoseconds: 700_000_000)
-        task?.cancel()
-        task = nil
-        request = nil
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    private static func run(_ recognizer: SFSpeechRecognizer, url: URL, hints: [String], onDevice: Bool) async throws -> String {
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        request.shouldReportPartialResults = false
+        request.requiresOnDeviceRecognition = onDevice
+        request.addsPunctuation = true
+        request.contextualStrings = Array(hints.prefix(100))
+        let once = Once()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+                let task = recognizer.recognitionTask(with: request) { result, error in
+                    if let result, result.isFinal {
+                        let text = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        once.run { text.isEmpty ? continuation.resume(throwing: TranscriberError.noSpeech)
+                                                : continuation.resume(returning: text) }
+                    } else if let error {
+                        let nsError = error as NSError
+                        // 1110: no speech detected; 203: nothing recognised.
+                        let noSpeech = nsError.domain == "kAFAssistantErrorDomain" && [203, 1110].contains(nsError.code)
+                        once.run { continuation.resume(throwing: noSpeech ? TranscriberError.noSpeech
+                                                                          : TranscriberError.failed(error.localizedDescription)) }
+                    }
+                }
+                once.task = task
+                DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+                    once.run {
+                        task.cancel()
+                        continuation.resume(throwing: TranscriberError.failed("quá 30 giây"))
+                    }
+                }
+            }
+        } onCancel: {
+            once.task?.cancel()
+        }
+    }
+
+    private final class Once: @unchecked Sendable {
+        private let lock = NSLock()
+        private var done = false
+        var task: SFSpeechRecognitionTask?
+
+        func run(_ body: () -> Void) {
+            lock.lock()
+            defer { lock.unlock() }
+            guard !done else { return }
+            done = true
+            body()
+        }
     }
 
     enum TranscriberError: LocalizedError {
-        case unavailable
-        var errorDescription: String? { "Nhận dạng giọng nói tiếng Anh chưa sẵn sàng trên máy này." }
+        case unavailable, noSpeech, failed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable: return "Nhận dạng giọng nói tiếng Anh chưa sẵn sàng trên máy này. Chạm bàn phím để gõ câu trả lời."
+            case .noSpeech: return "Không nghe thấy câu nào trong bản ghi. Nói to, gần micro hơn rồi thử lại."
+            case .failed(let reason): return "Không nhận dạng được câu vừa nói (\(reason)). Thử lại hoặc chạm bàn phím để gõ."
+            }
+        }
     }
 }

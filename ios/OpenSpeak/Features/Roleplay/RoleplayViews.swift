@@ -172,8 +172,10 @@ final class RoleplayChatModel {
     private(set) var tasksDone: [Bool]
     private(set) var hint: String?
     private(set) var sending = false
+    private(set) var transcribing = false
     private(set) var error: String?
-    let transcriber = SpeechTranscriber()
+    let recorder = AudioRecorder()
+    private let reference = ReferenceAudioRenderer()
 
     init(scenario: RoleplayScenario) {
         self.scenario = scenario
@@ -182,19 +184,22 @@ final class RoleplayChatModel {
     }
 
     var finished: Bool { !tasksDone.isEmpty && tasksDone.allSatisfy { $0 } }
+    var busy: Bool { sending || transcribing }
 
+    /// Records the turn as a WAV file; the same file gives the words (speech recognition) and the
+    /// pronunciation and intonation scores (phoneme model on the backend).
     func micTapped(level: String, progress: ProgressStore) async {
-        if transcriber.isRunning {
-            let text = await transcriber.stop()
-            if !text.isEmpty { await send(text, level: level, progress: progress) }
+        if recorder.isRecording {
+            guard let audio = recorder.stop() else { return }
+            await handleTake(audio, level: level, progress: progress)
             return
         }
-        guard await transcriber.authorize() else {
+        guard await SpeechTranscriber.authorize(), await recorder.requestPermission() else {
             error = "Cần quyền micro và nhận dạng giọng nói (Cài đặt > Quyền riêng tư)."
             return
         }
         do {
-            try transcriber.start()
+            try recorder.start()
             error = nil
             Haptics.tap()
         } catch {
@@ -202,18 +207,45 @@ final class RoleplayChatModel {
         }
     }
 
-    func send(_ text: String, level: String, progress: ProgressStore) async {
+    private func handleTake(_ audio: URL, level: String, progress: ProgressStore) async {
+        transcribing = true
+        defer { transcribing = false }
+        do {
+            let text = try await SpeechTranscriber.transcribe(audio, hints: hints)
+            transcribing = false
+            await send(text, audio: audio, level: level, progress: progress)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Phrases the learner is likely to say next.
+    private var hints: [String] {
+        var phrases = scenario.tasks.map(\.en)
+        if let last = messages.last(where: \.fromAI) { phrases.append(last.text) }
+        phrases += messages.compactMap(\.betterVersion)
+        return phrases
+    }
+
+    func send(_ text: String, audio: URL? = nil, level: String, progress: ProgressStore) async {
         let message = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !message.isEmpty, !sending else { return }
         let history = messages
-        messages.append(RoleplayMessage(fromAI: false, text: message))
-        let userIndex = messages.count - 1
+        var turnMessage = RoleplayMessage(fromAI: false, text: message)
+        turnMessage.audio = audio
+        messages.append(turnMessage)
+        let id = turnMessage.id
+        if audio != nil {
+            Task { await score(id, progress: progress) }
+        }
         sending = true
         defer { sending = false }
         do {
             let turn = try await APIClient.current().roleplayTurn(scenario: scenario, history: history, message: message, level: level)
-            messages[userIndex].corrections = turn.corrections
-            messages[userIndex].betterVersion = turn.betterVersion
+            update(id) {
+                $0.corrections = turn.corrections
+                $0.betterVersion = turn.betterVersion
+            }
             let before = tasksDone.filter { $0 }.count
             tasksDone = zip(tasksDone, turn.tasksDone + Array(repeating: false, count: max(0, tasksDone.count - turn.tasksDone.count)))
                 .map { $0 || $1 }
@@ -223,8 +255,44 @@ final class RoleplayChatModel {
             SpeechPlayer.shared.speak(turn.reply)
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = "AI chưa trả lời được: \(error.localizedDescription)"
         }
+    }
+
+    /// Scores the recording of a spoken turn against the words it was recognised as.
+    func score(_ id: UUID, progress: ProgressStore) async {
+        guard let message = messages.first(where: { $0.id == id }), let audio = message.audio else { return }
+        update(id) {
+            $0.scoring = true
+            $0.scoreError = nil
+        }
+        do {
+            let client = try APIClient.current()
+            let referenceURL = try? await reference.render(message.text)
+            let result = try await client.assess(text: message.text, audio: audio, reference: referenceURL, skipUnknown: true)
+            // Conversation results count like any other speaking practice, so the personal path sees them.
+            progress.record(result, key: "r:\(message.text.lowercased())")
+            update(id) { $0.assessment = result }
+        } catch {
+            update(id) { $0.scoreError = "Chưa chấm được phát âm: \(error.localizedDescription)" }
+        }
+        update(id) { $0.scoring = false }
+    }
+
+    /// The recogniser heard other words than the learner meant: score the same recording against the right text.
+    func correctTranscript(_ id: UUID, to text: String, progress: ProgressStore) async {
+        let fixed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fixed.isEmpty else { return }
+        update(id) {
+            $0.text = fixed
+            $0.assessment = nil
+        }
+        await score(id, progress: progress)
+    }
+
+    private func update(_ id: UUID, _ change: (inout RoleplayMessage) -> Void) {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
+        change(&messages[index])
     }
 }
 
@@ -235,6 +303,8 @@ struct RoleplayChatView: View {
     @State private var model: RoleplayChatModel
     @State private var draft = ""
     @State private var typing = false
+    @State private var editing: RoleplayMessage?
+    @State private var editText = ""
 
     init(scenario: RoleplayScenario) {
         _model = State(initialValue: RoleplayChatModel(scenario: scenario))
@@ -247,7 +317,13 @@ struct RoleplayChatView: View {
                 ScrollView {
                     VStack(spacing: 14) {
                         ForEach(model.messages) { message in
-                            ChatBubble(message: message).id(message.id)
+                            ChatBubble(message: message,
+                                       edit: {
+                                           editText = message.text
+                                           editing = message
+                                       },
+                                       retryScore: { Task { await model.score(message.id, progress: progress) } })
+                                .id(message.id)
                         }
                         if model.sending {
                             ProgressView().frame(maxWidth: .infinity, alignment: .leading)
@@ -259,19 +335,42 @@ struct RoleplayChatView: View {
                     }
                     .padding(16)
                 }
-                .onChange(of: model.messages.count) { _, _ in
+                // A turn's score card arrives after the AI has answered and makes that turn taller,
+                // so follow every change in height, not only new messages.
+                .onChange(of: layoutKey) { _, _ in
                     if let last = model.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
             if let error = model.error {
-                Text(error).font(.footnote).foregroundStyle(Theme.bad).padding(.horizontal, 16)
+                Text(error)
+                    .font(.footnote).foregroundStyle(Theme.bad)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .accessibilityIdentifier("roleplay.error")
             }
             inputBar
         }
         .screenBackground()
         .inlineNavigationTitle(model.scenario.title)
         .onAppear { SpeechPlayer.shared.speak(model.scenario.opening) }
-        .onDisappear { Task { _ = await model.transcriber.stop() } }
+        .onDisappear { if model.recorder.isRecording { model.recorder.stop() } }
+        .alert("Sửa câu bạn định nói", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+            TextField("Câu tiếng Anh", text: $editText)
+            Button("Chấm lại") {
+                if let id = editing?.id {
+                    let text = editText
+                    Task { await model.correctTranscript(id, to: text, progress: progress) }
+                }
+                editing = nil
+            }
+            Button("Huỷ", role: .cancel) { editing = nil }
+        } message: {
+            Text("Máy nhận dạng có thể nghe nhầm từ. Sửa lại đúng câu bạn định nói, app sẽ chấm lại chính bản ghi đó theo câu này.")
+        }
+    }
+
+    private var layoutKey: [String] {
+        model.messages.map { "\($0.id)-\($0.scoring)-\($0.assessment != nil)-\($0.scoreError != nil)" } + ["\(model.sending)"]
     }
 
     private var taskStrip: some View {
@@ -294,6 +393,13 @@ struct RoleplayChatView: View {
         .background(Theme.surface.opacity(0.9))
     }
 
+    private var status: String {
+        if model.recorder.isRecording { return "Đang ghi âm… Chạm ■ để gửi" }
+        if model.transcribing { return "Đang nhận dạng câu bạn nói…" }
+        if model.sending { return "AI đang trả lời…" }
+        return "Chạm micro để nói, chạm lần nữa để gửi"
+    }
+
     private var inputBar: some View {
         HStack(spacing: 12) {
             if typing {
@@ -307,25 +413,31 @@ struct RoleplayChatView: View {
                 .accessibilityLabel("Gửi")
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty || model.sending)
             } else {
-                Text(model.transcriber.isRunning ? (model.transcriber.text.isEmpty ? "Đang nghe…" : model.transcriber.text)
-                                                  : "Chạm micro để nói, chạm lần nữa để gửi")
-                    .font(.subheadline)
-                    .foregroundStyle(model.transcriber.isRunning ? Theme.ink : .secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 8) {
+                    if model.busy { ProgressView() }
+                    Text(status)
+                        .font(.subheadline)
+                        .foregroundStyle(model.recorder.isRecording ? Theme.ink : .secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Button {
                     Task { await model.micTapped(level: level, progress: progress) }
                 } label: {
-                    Image(systemName: model.transcriber.isRunning ? "stop.fill" : "mic.fill")
+                    Image(systemName: model.recorder.isRecording ? "stop.fill" : "mic.fill")
                         .font(.title2)
                         .frame(width: 60, height: 60)
-                        .background(model.transcriber.isRunning ? Theme.badFill : Theme.primaryFill, in: Circle())
+                        .background(model.recorder.isRecording ? Theme.badFill : Theme.primaryFill, in: Circle())
                         .foregroundStyle(.white)
                         .shadow(color: Theme.glow.opacity(0.6), radius: 10)
+                        .opacity(model.busy ? 0.5 : 1)
                 }
-                .disabled(model.sending)
+                .disabled(model.busy)
+                .accessibilityLabel(model.recorder.isRecording ? "Dừng và gửi" : "Ghi âm")
+                .accessibilityIdentifier("roleplay.mic")
             }
             Button { typing.toggle() } label: {
                 Image(systemName: typing ? "mic" : "keyboard").font(.title3).foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel(typing ? "Nói" : "Gõ phím")
         }
@@ -343,17 +455,22 @@ struct RoleplayChatView: View {
 
 private struct ChatBubble: View {
     let message: RoleplayMessage
+    let edit: () -> Void
+    let retryScore: () -> Void
 
     var body: some View {
         VStack(alignment: message.fromAI ? .leading : .trailing, spacing: 8) {
             HStack(alignment: .bottom, spacing: 8) {
                 if !message.fromAI { Spacer(minLength: 40) }
-                Text(message.text)
-                    .font(.body)
-                    .foregroundStyle(message.fromAI ? Theme.ink : Theme.background)
+                bubbleText
                     .padding(12)
-                    .background(message.fromAI ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.primary),
+                    .background(message.fromAI || message.assessment != nil ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.primary),
                                 in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        if message.assessment != nil {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.primary, lineWidth: 2)
+                        }
+                    }
                 if message.fromAI {
                     Button { SpeechPlayer.shared.speak(message.text) } label: {
                         Image(systemName: "speaker.wave.2.fill").foregroundStyle(Theme.glow)
@@ -370,11 +487,173 @@ private struct ChatBubble: View {
                     Label("Nói lại câu này (chấm phát âm)", systemImage: "waveform").font(.caption.bold())
                 }
             }
+            if message.audio != nil {
+                TurnPronunciationCard(message: message, edit: edit, retry: retryScore)
+            }
             if !message.corrections.isEmpty || message.betterVersion != nil {
                 CorrectionCard(message: message)
             }
         }
         .frame(maxWidth: .infinity, alignment: message.fromAI ? .leading : .trailing)
+    }
+
+    /// A scored spoken turn shows each word in its score colour, like the speaking screen.
+    @ViewBuilder
+    private var bubbleText: some View {
+        if let assessment = message.assessment, !message.fromAI {
+            colouredText(assessment)
+                .font(.body.weight(.semibold))
+                .accessibilityIdentifier("roleplay.userTurn")
+        } else {
+            Text(message.text)
+                .font(.body)
+                .foregroundStyle(message.fromAI ? Theme.ink : Theme.background)
+                .accessibilityIdentifier(message.fromAI ? "roleplay.aiTurn" : "roleplay.userTurn")
+        }
+    }
+
+    private func colouredText(_ assessment: Assessment) -> SwiftUI.Text {
+        var scores: [String: [Int?]] = [:]
+        for word in assessment.words { scores[word.word.lowercased(), default: []].append(word.score) }
+        var result = SwiftUI.Text("")
+        let tokens = message.text.split(separator: " ", omittingEmptySubsequences: true)
+        for (index, token) in tokens.enumerated() {
+            let key = token.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            var color = Theme.ink
+            if var list = scores[key], !list.isEmpty {
+                color = Theme.scoreColor(list.removeFirst())
+                scores[key] = list
+            }
+            result = result + SwiftUI.Text((index > 0 ? " " : "") + token).foregroundColor(color)
+        }
+        return result
+    }
+}
+
+/// Under a spoken turn: how it was pronounced (phoneme model) and how the voice moved (intonation).
+private struct TurnPronunciationCard: View {
+    let message: RoleplayMessage
+    let edit: () -> Void
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let assessment = message.assessment {
+                NavigationLink {
+                    TurnAssessmentView(text: message.text, assessment: assessment, audio: message.audio,
+                                       practice: message.betterVersion ?? message.text)
+                } label: {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 12) {
+                            ScoreRing(score: assessment.scores.overall, size: 46, lineWidth: 5)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Phát âm \(score(assessment.scores.pronunciation)) · Ngữ điệu \(score(assessment.scores.intonation))")
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                Text(intonationLine(assessment)).font(.caption).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        ForEach(issues(assessment), id: \.self) { issue in
+                            SwiftUI.Label {
+                                Text(issue).fixedSize(horizontal: false, vertical: true)
+                            } icon: {
+                                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Theme.bad)
+                            }
+                            .font(.caption).foregroundStyle(Theme.ink)
+                        }
+                        if let skipped = assessment.skippedWords, !skipped.isEmpty {
+                            Text("Không chấm: \(skipped.joined(separator: ", ")) (chưa có trong từ điển phát âm)")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Label("Xem chi tiết và luyện lại", systemImage: "chevron.right")
+                            .font(.caption.bold()).foregroundStyle(Theme.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("roleplay.pronunciation")
+            } else if message.scoring {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Đang chấm phát âm và ngữ điệu…").font(.caption).foregroundStyle(.secondary)
+                }
+            } else if let error = message.scoreError {
+                Text(error).font(.caption).foregroundStyle(Theme.bad).fixedSize(horizontal: false, vertical: true)
+                Button("Chấm lại", action: retry).font(.caption.bold())
+            }
+            Button(action: edit) {
+                Label("Máy nghe nhầm chữ? Sửa câu", systemImage: "pencil").font(.caption2.weight(.semibold))
+            }
+            .disabled(message.scoring)
+            .accessibilityIdentifier("roleplay.editTranscript")
+        }
+        .padding(12)
+        .frame(maxWidth: 320, alignment: .leading)
+        .background(Theme.surface.opacity(0.7), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func score(_ value: Int?) -> String { value.map(String.init) ?? "–" }
+
+    private func intonationLine(_ assessment: Assessment) -> String {
+        let i = assessment.intonation
+        let want = i.expected == "rising" ? "lên giọng" : "xuống giọng"
+        switch i.detected {
+        case i.expected?: return "Cuối câu \(want) đúng như cần."
+        case "rising": return "Cuối câu cần \(want), bạn lại lên giọng."
+        case "falling": return "Cuối câu cần \(want), bạn lại xuống giọng."
+        case "flat": return "Cuối câu cần \(want), bạn giữ giọng đều đều."
+        default: return "Chưa đo được ngữ điệu cuối câu."
+        }
+    }
+
+    /// The two weakest sounds, in the words they were in.
+    private func issues(_ assessment: Assessment) -> [String] {
+        let weak = assessment.words.flatMap { word in word.phones.map { (word: word.word, phone: $0) } }
+            .filter { $0.phone.status != .good }
+            .sorted { ($0.phone.score ?? 0) < ($1.phone.score ?? 0) }
+        return weak.prefix(2).map { item in
+            let p = item.phone
+            switch p.status {
+            case .substituted: return "\(item.word): /\(p.expected)/ nghe như /\(p.heard ?? "?")/"
+            case .missing: return "\(item.word): bị bỏ mất /\(p.expected)/"
+            default: return "\(item.word): /\(p.expected)/ chưa rõ (\(p.score ?? 0) điểm)"
+            }
+        }
+    }
+}
+
+/// The full result of one spoken turn, with a way to practise the sentence properly.
+private struct TurnAssessmentView: View {
+    let text: String
+    let assessment: Assessment
+    let audio: URL?
+    let practice: String
+    @State private var tab: AssessmentResultView.ResultTab = .overview
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ResultTabBar(assessment: assessment, tab: $tab)
+                .padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 10)
+            ScrollView {
+                VStack(spacing: 16) {
+                    PromptCard(item: PracticeItem(text: text), assessment: assessment)
+                    AssessmentResultView(assessment: assessment,
+                                         playMine: { if let audio { SpeechPlayer.shared.play(url: audio) } },
+                                         tab: $tab)
+                }
+                .padding(20)
+            }
+            NavigationLink {
+                SpeakingSessionView(item: PracticeItem(text: practice))
+            } label: {
+                Label("Luyện nói lại câu này", systemImage: "mic.fill")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .padding(.horizontal, 20).padding(.vertical, 12)
+        }
+        .screenBackground()
+        .inlineNavigationTitle("Lượt nói của bạn")
     }
 }
 

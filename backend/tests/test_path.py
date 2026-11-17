@@ -145,7 +145,7 @@ def test_llm_lesson_is_validated_and_topped_up(lex):
     assert lesson["pairs"][0]["contrast"] == ["R", "L"] and len(lesson["pairs"]) >= 2
     assert lesson["sentences"][0]["text"] == "Please review the report for Friday."
     assert all("3" not in s["text"] for s in lesson["sentences"])
-    assert lesson["title"] == "R trong họp hành" and lesson["tip_vi"]
+    assert lesson["title"] == "/r/ trong họp hành" and lesson["tip_vi"]
     sent = json.loads(llm.calls[0][1])
     assert sent["candidates"][0]["sound"] == "R" and "41" not in sent["candidates"][0]["evidence"][0]
     assert "Họp hành" in sent["learner"]["topics"]

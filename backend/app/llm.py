@@ -27,7 +27,9 @@ RESPONSES = "openai-responses"
 ANTHROPIC = "anthropic-messages"
 FORMATS = (CHAT_COMPLETIONS, RESPONSES, ANTHROPIC)
 ANTHROPIC_VERSION = "2023-06-01"
-MAX_TOKENS = 4096
+# Required by the Messages API. Models with built-in (adaptive) thinking spend part of it thinking before
+# they write, and a full lesson or exam can need 5-6k tokens in total, so leave plenty of room.
+MAX_TOKENS = 16000
 JSON_ONLY = "Trả về đúng một đối tượng JSON, không kèm chữ nào khác."
 
 
@@ -166,6 +168,8 @@ def _read_responses(data: Dict[str, Any]) -> str:
 def _read_anthropic(data: Dict[str, Any]) -> str:
     parts = [b.get("text", "") for b in data.get("content") or [] if b.get("type") == "text"]
     if not any(parts):
+        if data.get("stop_reason") == "max_tokens":
+            raise ValueError("LLM used its whole token budget (max_tokens) before writing an answer")
         raise ValueError("LLM returned no text")
     return "".join(parts)
 
@@ -183,12 +187,17 @@ def parse_json(text: str) -> Any:
         return json.loads(text[start:end + 1])
 
 
+def env_timeout() -> float:
+    # A thinking model writing a whole exam was measured at about 110 s; the app waits up to 180 s.
+    return float(os.getenv("LLM_TIMEOUT", "160"))
+
+
 def client_from_env() -> Optional[LLMClient]:
     base_url, model = os.getenv("LLM_BASE_URL"), os.getenv("LLM_MODEL")
     if not (base_url and model):
         return None
     return LLMClient(base_url, os.getenv("LLM_API_KEY", ""), model, os.getenv("LLM_VISION_MODEL"),
-                     timeout=float(os.getenv("LLM_TIMEOUT", "60")),
+                     timeout=env_timeout(),
                      api_format=os.getenv("LLM_API_FORMAT", CHAT_COMPLETIONS))
 
 
@@ -242,7 +251,7 @@ def client_from_headers(headers: Dict[str, str], allow_private: bool = False,
     _check_base_url(base_url, allow_private, resolve or _resolve)
     return LLMClient(base_url, headers.get(HEADER_KEY, "").strip(), model,
                      headers.get(HEADER_VISION_MODEL, "").strip() or None,
-                     timeout=float(os.getenv("LLM_TIMEOUT", "60")), api_format=api_format)
+                     timeout=env_timeout(), api_format=api_format)
 
 
 def require(client: Optional[LLMClient]) -> LLMClient:

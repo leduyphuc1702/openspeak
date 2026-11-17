@@ -5,6 +5,22 @@ struct GlyphMask {
     let grid: Int
     let ink: [Bool]
     let near: [Bool]   // ink grown by a couple of cells: strokes here count as on the letter
+    /// Separate parts of the symbol (the stem and dot of i, each triangle of ː), as ink cell indices.
+    let components: [[Int]]
+
+    struct Result: CustomStringConvertible {
+        let coverage: Double
+        let precision: Double
+        /// Parts of the symbol the drawing mostly left out.
+        let missedParts: Int
+
+        var accepted: Bool { missedParts == 0 && coverage >= GlyphMask.minCoverage && precision >= GlyphMask.minPrecision }
+        var description: String { "coverage \(coverage), precision \(precision), missed parts \(missedParts)" }
+    }
+
+    static let minCoverage = 0.65
+    static let minPrecision = 0.75
+    static let minPartCoverage = 0.5
 
     @MainActor
     init?(symbol: String, font: Font, side: CGFloat, grid: Int = 52) {
@@ -40,18 +56,58 @@ struct GlyphMask {
         self.grid = grid
         self.ink = ink
         self.near = near
+        self.components = Self.parts(of: ink, grid: grid)
     }
 
-    /// Share of the letter covered, and share of the drawing that stays on the letter.
-    func score(strokes: [[CGPoint]], side: CGFloat) -> (coverage: Double, precision: Double) {
+    /// 8-connected groups of ink cells, without specks of one or two cells.
+    private static func parts(of ink: [Bool], grid: Int) -> [[Int]] {
+        var seen = [Bool](repeating: false, count: ink.count)
+        var result: [[Int]] = []
+        for start in ink.indices where ink[start] && !seen[start] {
+            var stack = [start], part: [Int] = []
+            seen[start] = true
+            while let cell = stack.popLast() {
+                part.append(cell)
+                let row = cell / grid, col = cell % grid
+                for dr in -1...1 {
+                    for dc in -1...1 {
+                        let r = row + dr, c = col + dc
+                        guard r >= 0, r < grid, c >= 0, c < grid else { continue }
+                        let next = r * grid + c
+                        if ink[next] && !seen[next] {
+                            seen[next] = true
+                            stack.append(next)
+                        }
+                    }
+                }
+            }
+            if part.count > 2 { result.append(part) }
+        }
+        return result
+    }
+
+    /// Accepts a tracing only if it covers enough of the whole symbol, stays on it, and goes over
+    /// every part, so a stroke over the i of /iː/ alone is not enough.
+    func evaluate(strokes: [[CGPoint]], side: CGFloat) -> Result {
+        let (covered, onLetter, total) = cells(strokes: strokes, side: side)
+        let inkCells = ink.indices.filter { ink[$0] }
+        let coverage = Double(inkCells.filter(covered.contains).count) / Double(max(inkCells.count, 1))
+        let missed = components.filter { part in
+            Double(part.filter(covered.contains).count) / Double(part.count) < Self.minPartCoverage
+        }.count
+        return Result(coverage: coverage, precision: Double(onLetter) / Double(max(total, 1)), missedParts: missed)
+    }
+
+    /// Cells under the finger (a stroke is about three cells wide), and how many drawn points lie on the letter.
+    private func cells(strokes: [[CGPoint]], side: CGFloat) -> (covered: Set<Int>, onLetter: Int, total: Int) {
         let cell = side / CGFloat(grid)
         var covered = Set<Int>()
         var onLetter = 0, total = 0
         for stroke in strokes {
             for point in densified(stroke, step: cell / 2) {
                 let col = Int(point.x / cell), row = Int(point.y / cell)
-                guard row >= 0, row < grid, col >= 0, col < grid else { total += 1; continue }
                 total += 1
+                guard row >= 0, row < grid, col >= 0, col < grid else { continue }
                 if near[row * grid + col] { onLetter += 1 }
                 for dr in -1...1 {
                     for dc in -1...1 {
@@ -61,9 +117,7 @@ struct GlyphMask {
                 }
             }
         }
-        let inkCells = ink.indices.filter { ink[$0] }
-        let hit = inkCells.filter(covered.contains).count
-        return (Double(hit) / Double(max(inkCells.count, 1)), Double(onLetter) / Double(max(total, 1)))
+        return (covered, onLetter, total)
     }
 
     private func densified(_ stroke: [CGPoint], step: CGFloat) -> [CGPoint] {
@@ -88,11 +142,15 @@ struct TraceView: View {
     let onSuccess: () -> Void
 
     static let side: CGFloat = 260
-    private var font: Font { .system(size: symbol.count > 1 ? 150 : 200, weight: .regular, design: .serif) }
+    static func font(for symbol: String) -> Font {
+        .system(size: symbol.count > 1 ? 150 : 200, weight: .regular, design: .serif)
+    }
+    private var font: Font { Self.font(for: symbol) }
 
     @State private var strokes: [[CGPoint]] = []
     @State private var drawing = false
     @State private var mask: GlyphMask?
+    @State private var maskFailed = false
     @State private var message = "Dùng ngón tay tô theo ký hiệu."
     @State private var passed = false
 
@@ -153,20 +211,23 @@ struct TraceView: View {
                 .buttonStyle(SecondaryButtonStyle())
                 Button("Tiếp tục", action: onSuccess)
                     .buttonStyle(PrimaryButtonStyle(color: passed ? Theme.good : Theme.primary))
-                    .disabled(!passed)
-                    .opacity(passed ? 1 : 0.5)
+                    .disabled(!(passed || maskFailed))
+                    .opacity(passed || maskFailed ? 1 : 0.5)
             }
         }
-        .onAppear { mask = GlyphMask(symbol: symbol, font: font, side: Self.side) }
+        .onAppear {
+            mask = GlyphMask(symbol: symbol, font: font, side: Self.side)
+            maskFailed = mask == nil
+        }
     }
 
     private func evaluate() {
         guard let mask else {
-            passed = !strokes.isEmpty
+            message = "Máy này không tạo được mẫu để chấm nét vẽ. Bấm Tiếp tục để sang bước sau."
             return
         }
-        let (coverage, precision) = mask.score(strokes: strokes, side: Self.side)
-        var accepted = coverage >= 0.55 && precision >= 0.7
+        let result = mask.evaluate(strokes: strokes, side: Self.side)
+        var accepted = result.accepted
         #if DEBUG
         // UI tests cannot draw a letter accurately; with this set, the second stroke passes.
         if ProcessInfo.processInfo.environment["OPENSPEAK_EASY_TRACE"] != nil, strokes.count >= 2 { accepted = true }
@@ -176,10 +237,12 @@ struct TraceView: View {
             message = "Giỏi lắm! Bạn đã viết được /\(symbol)/."
             Haptics.result(success: true)
             SpeechPlayer.shared.speak("Great")
-        } else if precision < 0.7 {
+        } else if result.precision < GlyphMask.minPrecision {
             message = "Nét vẽ đang lệch ra ngoài. Tô lại sát theo chữ nhé."
+        } else if result.missedParts > 0 {
+            message = "Đã tô được \(Int(result.coverage * 100))%. Còn \(result.missedParts) phần của ký hiệu chưa tô (kể cả dấu chấm, dấu ː)."
         } else {
-            message = "Đã tô được \(Int(coverage * 100))%. Tô tiếp các nét còn lại."
+            message = "Đã tô được \(Int(result.coverage * 100))%. Tô kín hơn theo các nét."
         }
     }
 }

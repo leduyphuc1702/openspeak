@@ -182,31 +182,9 @@ final class WalkthroughTests: XCTestCase {
         }
         guard tap(button("Tiếp tục")) else { return }
 
-        _ = text("Nghe phân biệt").waitForExistence(timeout: 5)
-        for question in 0..<6 where text("Nghe phân biệt").exists {
-            if question == 0 { shot("lesson-4-listen") }
-            let answer = button("Có").exists ? button("Có") : buttons(where: "label CONTAINS '/'").firstMatch
-            guard answer.exists else { break }
-            answer.tap()
-            if question == 0 { assertPinned(button("Tiếp"), "lesson listen") }
-            if question < 2 { shot("lesson-4-listen-answered-\(question + 1)") }
-            guard tap(button("Tiếp")) else { break }
-            Thread.sleep(forTimeInterval: 0.6)
-        }
-
-        _ = text("Tìm âm trong từ").waitForExistence(timeout: 5)
-        for word in 0..<4 where text("Tìm âm trong từ").exists {
-            if word == 0 { shot("lesson-5-find") }
-            let targets = buttons(where: "label == %@", symbol)
-            guard targets.count > 0 else { break }
-            for index in 0..<targets.count { targets.element(boundBy: index).tap() }
-            if word == 0 {
-                assertPinned(button("Tiếp"), "lesson find")
-                shot("lesson-5-find-found")
-            }
-            guard tap(button("Tiếp")) else { break }
-            Thread.sleep(forTimeInterval: 0.6)
-        }
+        XCTAssertFalse(text("Tìm âm trong từ").exists, "the trivial find-the-symbol step is gone")
+        answerExercises("lesson-4", context: "lesson listen")
+        XCTAssertFalse(text("Tìm âm trong từ").exists, "the trivial find-the-symbol step is gone")
 
         guard text("Nói thành tiếng").waitForExistence(timeout: 5) else { shot("lesson-6-missing"); return }
         assertPinned(button("Bỏ qua bước nói"), "lesson speak")
@@ -599,26 +577,14 @@ extension WalkthroughTests {
         guard tap(button("tab.Lộ trình cá nhân")) else { return }
         shot("path-loading")
         let current = app.buttons["path.current"]
-        guard current.waitForExistence(timeout: 90) else { shot("path-failed"); return }
+        guard current.waitForExistence(timeout: 200) else { shot("path-failed"); return }
         scrollShots("path-first", pages: 2)
         scrollToTop()
         guard tap(current) else { return }
         let start = button("Bắt đầu")
         assertPinned(start, "path intro")
         guard tap(start) else { return }
-        _ = text("Nghe phân biệt").waitForExistence(timeout: 5)
-        for question in 0..<6 where text("Nghe phân biệt").exists {
-            if question == 0 { shot("path-listen") }
-            let answer = button("Có").exists ? button("Có") : buttons(where: "label CONTAINS '/'").firstMatch
-            guard answer.exists else { break }
-            answer.tap()
-            if question == 0 {
-                assertPinned(button("Tiếp"), "path listen")
-                shot("path-listen-answered")
-            }
-            guard tap(button("Tiếp")) else { break }
-            Thread.sleep(forTimeInterval: 0.6)
-        }
+        answerExercises("path-listen", context: "path listen")
         guard text("Nói từ").waitForExistence(timeout: 5) else { shot("path-words-missing"); return }
         assertPinned(button("Tiếp tục").exists ? button("Tiếp tục") : button("Bỏ qua bước này"), "path words")
         scrollShots("path-words", pages: 2)
@@ -789,6 +755,204 @@ extension WalkthroughTests {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'AI soạn'")).firstMatch.exists
                       || current.label.contains("AI soạn"), "path lesson was not written by the learner's LLM")
         shot("llm-path")
+    }
+}
+
+extension WalkthroughTests {
+    /// A spoken roleplay turn: record, stop, and the turn must show up in the conversation with its
+    /// pronunciation score (or a visible reason why not). Uses the prepared take ("We call it bear.").
+    func test16RoleplayVoice() {
+        let take = ProcessInfo.processInfo.environment["FAKE_TAKE"] ?? ""
+        var extra: [String: String] = [:]
+        if !take.isEmpty {
+            extra["OPENSPEAK_FAKE_TAKE"] = take
+            // Without this the simulator shows the "could not recognise" error instead of a turn.
+            if ProcessInfo.processInfo.environment["REAL_RECOGNIZER"] == nil { extra["OPENSPEAK_FAKE_TRANSCRIPT"] = "We call it bear." }
+        }
+        launch("16", onboarded: true, extra: extra)
+        addUIInterruptionMonitor(withDescription: "permissions") { alert in
+            for label in ["Allow", "OK", "Cho phép"] where alert.buttons[label].exists {
+                alert.buttons[label].tap()
+                return true
+            }
+            return false
+        }
+        tab("Hội thoại")
+        let first = buttons(where: "label CONTAINS 'phút'").firstMatch
+        guard tap(first, timeout: 10) else { return }
+        guard tap(button("Bắt đầu hội thoại")) else { return }
+        Thread.sleep(forTimeInterval: 2)
+        shot("voice-chat")
+        let mic = buttons(where: "identifier == 'roleplay.mic' OR label CONTAINS[c] 'mic' OR label CONTAINS[c] 'micrô'").firstMatch
+        guard mic.waitForExistence(timeout: 5) else { XCTFail("no mic button"); return }
+        let micFrame = mic.frame
+        mic.tap()
+        Thread.sleep(forTimeInterval: 1)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for _ in 0..<3 {
+            let allow = springboard.buttons.matching(NSPredicate(format: "label IN {'Allow', 'OK', 'Cho phép'}")).firstMatch
+            guard allow.waitForExistence(timeout: 2) else { break }
+            allow.tap()
+            Thread.sleep(forTimeInterval: 1)
+        }
+        app.tap()
+        Thread.sleep(forTimeInterval: 2)
+        shot("voice-recording")
+        point(micFrame.midX, micFrame.midY).tap()
+        let turn = app.staticTexts.matching(NSPredicate(format: "identifier == 'roleplay.userTurn' OR identifier == 'roleplay.error'")).firstMatch
+        let appeared = turn.waitForExistence(timeout: 30)
+        shot("voice-after-stop")
+        XCTAssertTrue(appeared, "nothing appeared in the conversation after stopping the recording")
+        let score = app.buttons.matching(NSPredicate(format: "identifier == 'roleplay.pronunciation'")).firstMatch
+        if score.waitForExistence(timeout: 150) {
+            // The AI's answer (second AI bubble) must end up on screen, not hidden under the input bar.
+            let reply = app.staticTexts.matching(identifier: "roleplay.aiTurn").element(boundBy: 1)
+            if reply.waitForExistence(timeout: 150) {
+                Thread.sleep(forTimeInterval: 1.5)
+                shot("voice-scored")
+                let input = mic.frame
+                XCTAssertTrue(reply.frame.maxY <= input.minY && reply.frame.minY >= 0,
+                              "AI reply \(reply.frame) is off screen (input bar starts at \(input.minY))")
+            } else {
+                shot("voice-scored")
+            }
+            for _ in 0..<3 where !score.isHittable { app.swipeDown() }
+            shot("voice-scored-card")
+            Thread.sleep(forTimeInterval: 1)
+            score.tap()
+            XCTAssertTrue(button("tab.Tổng quan").waitForExistence(timeout: 5), "turn detail did not open")
+            scrollShots("voice-detail", pages: 2)
+            assertPinned(button("Luyện nói lại câu này"), "turn detail")
+            tap(button("Luyện nói lại câu này"))
+            _ = button("Bắt đầu ghi âm").waitForExistence(timeout: 5)
+            shot("voice-practice")
+            back()
+            back()
+            let edit = app.buttons["roleplay.editTranscript"].firstMatch
+            if tap(edit) {
+                shot("voice-edit")
+                let input = app.alerts.textFields.firstMatch
+                if input.waitForExistence(timeout: 3) {
+                    input.tap()
+                    input.buttons.firstMatch.tapIfPresent()
+                    input.typeText("We call it bear?")
+                    shot("voice-edit-typed")
+                    tap(app.alerts.buttons["Chấm lại"])
+                    _ = score.waitForExistence(timeout: 120)
+                    Thread.sleep(forTimeInterval: 1)
+                    shot("voice-rescored")
+                }
+            }
+        } else {
+            XCTFail("no pronunciation score for the spoken turn")
+            shot("voice-no-score")
+        }
+    }
+}
+
+extension WalkthroughTests {
+    /// Answers every question of a "Nghe và nhận âm" step, with shots of the first question of each kind
+    /// before and after answering. Asserts the old yes/no question is gone.
+    func answerExercises(_ prefix: String, context: String) {
+        guard text("Nghe và nhận âm").waitForExistence(timeout: 60) else { shot("\(prefix)-missing"); return }
+        let kinds = [("pair", "Bạn nghe thấy từ nào?"), ("gap", "Nghe cả câu"), ("spelling", "Từ nào có âm")]
+        var seen = Set<String>()
+        for _ in 0..<12 where text("Nghe và nhận âm").exists {
+            let options = buttons(where: "identifier BEGINSWITH 'option.'")
+            // The first question may still be coming from a language model.
+            guard options.firstMatch.waitForExistence(timeout: seen.isEmpty ? 180 : 5) else { break }
+            XCTAssertFalse(button("Có").exists || button("Không").exists, "yes/no question still shown")
+            let kind = kinds.first { k in
+                app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", k.1)).firstMatch.exists
+            }?.0 ?? "other"
+            let first = seen.insert(kind).inserted
+            if first { shot("\(prefix)-\(kind)") }
+            options.element(boundBy: options.count - 1).tap()
+            if first {
+                assertPinned(button("Tiếp"), "\(context) \(kind)")
+                shot("\(prefix)-\(kind)-answered")
+            }
+            guard tap(button("Tiếp")) else { break }
+            Thread.sleep(forTimeInterval: 0.6)
+        }
+    }
+
+    /// The first checkpoint exam, due after four finished path lessons: intro, questions, speaking, result.
+    func test17PathExam() {
+        let env = ProcessInfo.processInfo.environment
+        let take = env["FAKE_TAKE"] ?? ""
+        var extra = ["OPENSPEAK_SEED_PATH": "exam"]
+        if !take.isEmpty { extra["OPENSPEAK_FAKE_TAKE"] = take }
+        launch("17", onboarded: true, extra: extra)
+        tab("Học")
+        guard tap(button("tab.Lộ trình cá nhân")) else { return }
+        let exam = app.buttons["path.exam"]
+        guard exam.waitForExistence(timeout: 200) else { shot("exam-failed"); return }
+        for _ in 0..<8 where !exam.isHittable { app.swipeUp() }
+        shot("exam-row")
+        guard tap(exam) else { return }
+        let start = button("Bắt đầu kiểm tra")
+        assertPinned(start, "exam intro")
+        scrollShots("exam-intro", pages: 2)
+        guard tap(start) else { return }
+        answerExercises("exam-listen", context: "exam listen")
+        guard text("Nói từ").waitForExistence(timeout: 5) else { shot("exam-words-missing"); return }
+        scrollShots("exam-words", pages: 2)
+        scrollToTop()
+        let card = buttons(where: "identifier BEGINSWITH 'speak.'").firstMatch
+        if card.exists, !take.isEmpty {
+            card.tap()
+            if tap(button("Bắt đầu ghi âm")) {
+                Thread.sleep(forTimeInterval: 1.5)
+                tap(button("Dừng ghi âm"))
+                if button("tab.Tổng quan").waitForExistence(timeout: 120) { shot("exam-word-result") }
+            }
+            dismissSheet()
+        }
+        let onward = button("Tiếp tục").exists ? button("Tiếp tục") : button("Bỏ qua bước này")
+        assertPinned(onward, "exam words")
+        guard tap(onward) else { return }
+        if text("Nói câu").waitForExistence(timeout: 5) {
+            scrollShots("exam-sentences", pages: 2)
+            let next = button("Tiếp tục").exists ? button("Tiếp tục") : button("Bỏ qua bước này")
+            assertPinned(next, "exam sentences")
+            guard tap(next) else { return }
+        }
+        guard button("Hoàn thành").waitForExistence(timeout: 5) else { shot("exam-done-missing"); return }
+        assertPinned(button("Hoàn thành"), "exam done")
+        scrollShots("exam-done", pages: 2)
+        tap(button("Hoàn thành"))
+        Thread.sleep(forTimeInterval: 1)
+        scrollShots("exam-after", pages: 2)
+    }
+
+    /// Tracing with the real rules: one stroke on part of the symbol must not pass.
+    func test18TraceStrict() {
+        launch("18", onboarded: true)
+        tab("Học")
+        guard tap(buttons(where: "label CONTAINS 'Âm /'").firstMatch) else { return }
+        let header = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '/' AND label ENDSWITH '/'")).firstMatch
+        let symbol = header.label.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard tap(button("Mình đã hiểu")) else { return }
+        for _ in 0..<3 {
+            guard tap(button(symbol)) else { return }
+            guard tap(button("Tiếp")) else { return }
+            Thread.sleep(forTimeInterval: 0.6)
+        }
+        guard text("Tô ký hiệu").waitForExistence(timeout: 5) else { shot("strict-missing"); return }
+        let message = text("Dùng ngón tay tô theo ký hiệu.")
+        guard message.exists else { shot("strict-no-message"); return }
+        shot("strict-trace")
+        let box = CGPoint(x: message.frame.midX, y: message.frame.minY - 16 - 130)
+        point(box.x - 30, box.y - 50).press(forDuration: 0.05, thenDragTo: point(box.x - 30, box.y + 60))
+        shot("strict-one-stroke")
+        XCTAssertFalse(button("Tiếp tục").isEnabled, "one stroke passed the tracing step")
+        for i in 0..<6 {
+            let y = box.y - 100 + CGFloat(i) * 40
+            point(box.x - 120, y).press(forDuration: 0.05, thenDragTo: point(box.x + 120, y + 20))
+        }
+        shot("strict-scribble")
+        XCTAssertFalse(button("Tiếp tục").isEnabled, "scribbling across the box passed the tracing step")
     }
 }
 

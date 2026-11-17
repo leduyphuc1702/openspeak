@@ -37,6 +37,19 @@ targets:
           NSAllowsLocalNetworking: true
         NSLocalNetworkUsageDescription: Kết nối tới máy chủ chấm phát âm trong mạng nội bộ.
         OpenSpeakServerURL: $(OPENSPEAK_SERVER_URL)
+  OpenSpeakTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: OpenSpeakTests
+    dependencies:
+      - target: OpenSpeak
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.openspeak.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/OpenSpeak.app/OpenSpeak
+        BUNDLE_LOADER: $(TEST_HOST)
+        GENERATE_INFOPLIST_FILE: YES
   OpenSpeakUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -54,10 +67,12 @@ schemes:
     build:
       targets:
         OpenSpeak: all
+        OpenSpeakTests: [test]
         OpenSpeakUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
+        - OpenSpeakTests
         - OpenSpeakUITests

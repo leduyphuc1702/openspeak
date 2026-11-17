@@ -7,6 +7,21 @@ final class PathPlanner {
     enum Status: Equatable { case idle, loading, failed(String) }
 
     private(set) var status: Status = .idle
+    private(set) var examStatus: Status = .idle
+
+    func fetchExam(progress: ProgressStore, level: String, topics: [String]) async {
+        guard examStatus != .loading, let index = progress.dueExamIndex, progress.dueExam == nil else { return }
+        examStatus = .loading
+        do {
+            let exam = try await APIClient.current().pathExam(progress.examRequest(level: level, topics: topics, index: index))
+            progress.addExam(exam)
+            examStatus = .idle
+        } catch is URLError {
+            examStatus = .failed("Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")
+        } catch {
+            examStatus = .failed(error.localizedDescription)
+        }
+    }
 
     func fetchNext(progress: ProgressStore, level: String, topics: [String]) async {
         guard status != .loading, progress.currentPathLesson == nil else { return }
@@ -53,6 +68,17 @@ struct PersonalPathSection: View {
                               done: true, current: false, locked: false)
                 }
                 .buttonStyle(FlatButtonStyle())
+                ForEach(progress.pathExams.filter { $0.afterLesson == lesson.index && progress.examResult($0) != nil }) { exam in
+                    examRow(exam, current: false)
+                }
+            }
+            if let index = progress.dueExamIndex {
+                if let exam = progress.dueExam {
+                    examRow(exam, current: true)
+                        .accessibilityIdentifier("path.exam")
+                } else {
+                    examStatus(index)
+                }
             }
             if let current = progress.currentPathLesson {
                 TaskLink {
@@ -74,6 +100,48 @@ struct PersonalPathSection: View {
         }
         .task(id: progress.currentPathLesson?.index) {
             await planner.fetchNext(progress: progress, level: level, topics: Prefs.topicIDs(topicsRaw))
+        }
+        .task(id: progress.dueExamIndex) {
+            await planner.fetchExam(progress: progress, level: level, topics: Prefs.topicIDs(topicsRaw))
+        }
+    }
+
+    private func examRow(_ exam: PathExam, current: Bool) -> some View {
+        var parts = ["\(exam.listening.count + exam.words.count + exam.sentences.count) mục",
+                     exam.writtenByAI ? "AI ra đề" : "Ra đề tự động"]
+        if let score = progress.examResult(exam)?.score { parts.append("\(score) điểm") }
+        return TaskLink {
+            PathExamView(exam: exam)
+        } label: {
+            LessonRow(number: exam.index, title: exam.title, kind: parts.joined(separator: " · "),
+                      icon: "checkmark.seal.fill", done: !current, current: current, locked: false,
+                      caption: "Bài kiểm tra \(exam.index) · sau bài \(exam.afterLesson)")
+        }
+        .buttonStyle(FlatButtonStyle())
+    }
+
+    @ViewBuilder
+    private func examStatus(_ index: Int) -> some View {
+        switch planner.examStatus {
+        case .failed(let message):
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Chưa ra được bài kiểm tra \(index)", systemImage: "exclamationmark.triangle.fill")
+                    .font(.headline).foregroundStyle(Theme.bad)
+                Text(message).font(.subheadline).foregroundStyle(.secondary)
+                Button("Thử lại") {
+                    Task { await planner.fetchExam(progress: progress, level: level, topics: Prefs.topicIDs(topicsRaw)) }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+            }
+            .card()
+        default:
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Đang ra bài kiểm tra \(index) từ các âm bạn vừa học…")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .card()
         }
     }
 
@@ -163,7 +231,7 @@ struct PathLessonView: View {
         var title: String {
             switch self {
             case .intro: return "Vì sao có bài này"
-            case .listen: return "Nghe phân biệt"
+            case .listen: return "Nghe và nhận âm"
             case .words: return "Nói từ"
             case .sentences: return "Nói câu"
             case .done: return "Hoàn thành"
@@ -175,14 +243,14 @@ struct PathLessonView: View {
     @Environment(ContentStore.self) private var content
     @Environment(ProgressStore.self) private var progress
     @State private var step: Step = .intro
-    @State private var questions: [ListenStep.Question] = []
+    @State private var questions: [Exercise] = []
 
     private var phoneme: Phoneme? { content.phoneme(lesson.focus) }
 
     private var steps: [Step] {
         Step.allCases.filter { step in
             switch step {
-            case .listen: return phoneme != nil && !questions.isEmpty
+            case .listen: return !questions.isEmpty
             case .words: return !lesson.words.isEmpty
             case .sentences: return !lesson.sentences.isEmpty
             default: return true
@@ -206,7 +274,10 @@ struct PathLessonView: View {
         #endif
         .onAppear {
             progress.startPathLesson(lesson)
-            if questions.isEmpty { questions = makeQuestions() }
+            if questions.isEmpty {
+                questions = lesson.exercises
+                    ?? lesson.pairs.map { Exercise.pair($0.a.entry, $0.b.entry, sound: lesson.focus) }
+            }
         }
     }
 
@@ -239,10 +310,12 @@ struct PathLessonView: View {
         case .intro:
             PathIntroStep(lesson: lesson, phoneme: phoneme, contrast: content.phoneme(lesson.contrast), next: advance)
         case .listen:
-            if let phoneme {
-                ListenStep(phoneme: phoneme, questions: questions,
-                           onAnswer: { progress.recordHearing(lesson.focus, correct: $0) }, next: advance)
-            }
+            ListenStep(questions: questions,
+                       source: lesson.writtenByAI ? "AI soạn theo chủ đề của bạn" : "Soạn tự động từ kho từ của máy chủ",
+                       onAnswer: { question, right in
+                           if question.testsHearing { progress.recordHearing(question.sound, correct: right) }
+                       },
+                       next: advance)
         case .words:
             PathSpeakStep(hint: "Nói từng từ. AI chấm riêng âm \(symbol(lesson.focus)) trong mỗi từ.",
                           items: lesson.words.map { word in
@@ -275,23 +348,6 @@ struct PathLessonView: View {
         Haptics.tap()
         guard let index = steps.firstIndex(of: step), index + 1 < steps.count else { return }
         withAnimation(.easeInOut(duration: 0.3)) { step = steps[index + 1] }
-    }
-
-    /// The lesson's minimal pairs, then "does this word have the sound?" with the lesson's words
-    /// and words that carry the contrast sound instead.
-    private func makeQuestions() -> [ListenStep.Question] {
-        var result: [ListenStep.Question] = lesson.pairs.map { pair in
-            .pair(play: Bool.random() ? pair.a.entry : pair.b.entry, options: [pair.a.entry, pair.b.entry])
-        }
-        let with = lesson.words.map(\.entry).shuffled().prefix(2)
-        var without = content.words(without: lesson.focus)
-        if let contrast = lesson.contrast {
-            let near = without.filter { $0.phones.contains(contrast) }
-            if !near.isEmpty { without = near }
-        }
-        result += with.map { .contains(word: $0, answer: true) }
-        result += without.shuffled().prefix(with.count).map { .contains(word: $0, answer: false) }
-        return Array(result.shuffled().prefix(6))
     }
 }
 
@@ -355,7 +411,11 @@ private struct PathIntroStep: View {
 
     private var summary: String {
         var parts = ["\(lesson.words.count) từ"]
-        if !lesson.pairs.isEmpty { parts.append("\(lesson.pairs.count) cặp âm") }
+        if let exercises = lesson.exercises, !exercises.isEmpty {
+            parts.append("\(exercises.count) câu hỏi")
+        } else if !lesson.pairs.isEmpty {
+            parts.append("\(lesson.pairs.count) cặp âm")
+        }
         if !lesson.sentences.isEmpty { parts.append("\(lesson.sentences.count) câu") }
         parts.append("độ khó: \(lesson.difficultyTitle)")
         return parts.joined(separator: " · ")
@@ -363,7 +423,7 @@ private struct PathIntroStep: View {
 }
 
 /// Cards to say aloud; each opens the speaking screen, which scores the lesson's sound.
-private struct PathSpeakStep: View {
+struct PathSpeakStep: View {
     let hint: String
     let items: [(item: PracticeItem, entry: WordEntry?, meaning: String?)]
     let focus: String
@@ -384,7 +444,7 @@ private struct PathSpeakStep: View {
                             Text(entry.item.text).font(.title3.bold()).foregroundStyle(Theme.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             if let word = entry.entry {
-                                Text(IPATokenizer.highlighted(word, phonemeID: focus))
+                                Text(IPATokenizer.highlighted(word, phonemeID: entry.item.focusPhone ?? focus))
                                     .font(.system(.body, design: .serif))
                             } else if let ipa = entry.item.connectedIPA {
                                 Text("/\(ipa)/").font(.system(.subheadline, design: .serif)).foregroundStyle(Theme.primary)

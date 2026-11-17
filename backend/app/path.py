@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel, Field
 
-from . import connected_speech, vocab
+from . import connected_speech, exercises, vocab
 from .llm import LLMClient
 from .path_pool import CONFUSABLE, COMMON_WORDS, L1_PRIOR, PAIRS, SENTENCES
 from .phonetics import PHONE_IPA, VOWEL_IDS, Lexicon, UnknownWordError, WordPron, expected_intonation
@@ -301,7 +301,7 @@ def rules_lesson(pool: Pool, req: PathRequest, plan: Plan) -> Dict:
     rng = random.Random(f"{req.next_index}:{plan.focus}")
     avoid = {w.lower() for w in req.recent_words}
     title = f"Âm {sym(plan.focus)}" + (f" và {sym(plan.contrast)}" if plan.contrast else "")
-    return {
+    lesson = {
         "index": req.next_index,
         "title": title,
         "focus": plan.focus,
@@ -314,6 +314,21 @@ def rules_lesson(pool: Pool, req: PathRequest, plan: Plan) -> Dict:
         "sentences": pool.sentences_for(plan.focus, plan.difficulty, rng, 3),
         "source": "rules",
     }
+    lesson["exercises"] = lesson_exercises(pool, lesson, rng)
+    return lesson
+
+
+def lesson_exercises(pool: Pool, lesson: Dict, rng: random.Random, found: Optional[Dict] = None,
+                     used: Optional[set] = None) -> List[Dict]:
+    """The lesson's pairs as listening questions, plus spelling and gap questions (the LLM's, topped up offline)."""
+    focus = lesson["focus"]
+    found = found or {}
+    used = set(used or ()) | {p[k]["word"] for p in lesson["pairs"] for k in ("a", "b")}
+    spelling = list(found.get("spelling", []))
+    if len(spelling) < 2:
+        spelling += exercises.rules_spelling(pool.lexicon, pool.words, focus, rng, 2 - len(spelling), used)
+    return exercises.interleave(exercises.pairs_as_exercises(lesson["pairs"], focus, rng),
+                                spelling[:2], found.get("gaps", [])[:2])
 
 
 PATH_PROMPT = (
@@ -328,9 +343,12 @@ PATH_PROMPT = (
     "'sentences' là 3 câu tự nhiên, chứa âm focus nhiều lần, không có tên riêng, không có chữ số. "
     "'reason_vi' giải thích ngắn bằng tiếng Việt vì sao bài này phù hợp với người học lúc này, dựa trên bằng chứng. "
     "'tip_vi' là một mẹo phát âm cụ thể cho focus (vị trí lưỡi, môi, hơi). "
+    "Ngoài ra soạn 2 'gaps' và 2 'spelling' cho âm focus theo quy tắc sau. " + exercises.RULES_VI + " "
     'Trả về JSON: {"focus": "TH", "contrast": "S", "title_vi": "...", "reason_vi": "...", "tip_vi": "...", '
     '"words": [{"word": "...", "meaning_vi": "..."}], "pairs": [{"a": "...", "b": "..."}], '
-    '"sentences": [{"text": "...", "meaning_vi": "..."}]}'
+    '"sentences": [{"text": "...", "meaning_vi": "..."}], '
+    '"gaps": [{"sentence": "...", "target": "...", "distractor": "...", "meaning_vi": "...", "topic": "..."}], '
+    '"spelling": [{"words": ["...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
 )
 
 
@@ -342,7 +360,9 @@ def llm_lesson(client: LLMClient, pool: Pool, req: PathRequest, plan: Plan) -> D
     candidates = plan.ranked[:6]
     payload = {
         "learner": {"level": vocab.LEVELS.get(req.level, req.level),
-                    "topics": [vocab.TOPIC_TITLES.get(t, t) for t in req.topics]},
+                    "topics": [vocab.TOPIC_TITLES.get(t, t) for t in req.topics],
+                    "topic_ids": req.topics},
+        "angles": exercises.angles_for(req.topics, random.Random(req.next_index)),
         "lesson_number": req.next_index,
         "difficulty": DIFFICULTY_TEXT[plan.difficulty],
         "candidates": [{"sound": c.id, "ipa": PHONE_IPA[c.id], "need": c.need, "evidence": c.evidence,
@@ -413,9 +433,10 @@ def llm_lesson(client: LLMClient, pool: Pool, req: PathRequest, plan: Plan) -> D
     reason = _text(data.get("reason_vi"), 300)
     if not reason:
         reason = plan.reason if focus == plan.focus else f"Bài này luyện {sym(focus)}."
-    return {
+    lesson = {
         "index": req.next_index,
-        "title": _text(data.get("title_vi"), 60) or fallback_title,
+        "title": exercises.with_symbols(_text(data.get("title_vi"), 60), [focus, contrast] if contrast else [focus])
+                 or fallback_title,
         "focus": focus,
         "contrast": contrast,
         "difficulty": plan.difficulty,
@@ -426,6 +447,12 @@ def llm_lesson(client: LLMClient, pool: Pool, req: PathRequest, plan: Plan) -> D
         "sentences": sentences[:3],
         "source": "llm",
     }
+    checker = exercises.Checker(lexicon, [focus], rng, req.topics, (), MAX_SENTENCE_WORDS[plan.difficulty])
+    checker.take(*(p[k]["word"] for p in lesson["pairs"] for k in ("a", "b")))
+    found = {"gaps": [g for g in map(checker.gap, exercises.items(data.get("gaps"))) if g],
+             "spelling": [q for q in map(checker.spelling, exercises.items(data.get("spelling"))) if q]}
+    lesson["exercises"] = lesson_exercises(pool, lesson, rng, found, checker.used)
+    return lesson
 
 
 def next_lesson(client: Optional[LLMClient], lexicon: Lexicon, req: PathRequest) -> Dict:

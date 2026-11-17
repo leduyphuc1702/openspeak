@@ -97,6 +97,8 @@ struct Assessment: Codable {
     let fluency: Fluency
     let pitchContour: PitchContour
     let feedback: String?
+    /// Words left out of the score because the pronunciation dictionary lacks them (free speech only).
+    var skippedWords: [String]? = nil
 }
 
 extension Assessment {

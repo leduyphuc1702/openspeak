@@ -32,6 +32,8 @@ final class ProgressStore {
         var listeningWrong: [String: Int] = [:]
         var pathLessons: [PathLesson] = []
         var pathResults: [String: PathResult] = [:]     // lesson index -> result
+        var pathExams: [PathExam] = []
+        var examResults: [String: ExamResult] = [:]     // exam index -> result
 
         init() {}
 
@@ -53,6 +55,8 @@ final class ProgressStore {
             // Lessons come from the server; if their shape changes, drop them rather than every other field.
             pathLessons = (try? c.decodeIfPresent([PathLesson].self, forKey: .pathLessons)) ?? []
             pathResults = (try? c.decodeIfPresent([String: PathResult].self, forKey: .pathResults)) ?? [:]
+            pathExams = (try? c.decodeIfPresent([PathExam].self, forKey: .pathExams)) ?? []
+            examResults = (try? c.decodeIfPresent([String: ExamResult].self, forKey: .examResults)) ?? [:]
         }
     }
 
@@ -145,7 +149,7 @@ final class ProgressStore {
                 guard let id = phone.id, let score = phone.score else { continue }
                 snapshot.soundScores[id, default: []].append(score)
                 snapshot.soundScores[id] = Array(snapshot.soundScores[id]!.suffix(20))
-                if id == tallyFocus { tally.append(score) }
+                if tallySounds.contains(id) { tally[id, default: []].append(score) }
             }
         }
     }
@@ -178,10 +182,17 @@ final class ProgressStore {
 
     // MARK: Personal path
 
-    /// Scores of one sound collected while a personal-path lesson is open.
-    @ObservationIgnored private var tallyLesson: Int?
-    @ObservationIgnored private var tallyFocus: String?
-    @ObservationIgnored private var tally: [Int] = []
+    /// Scores of the sounds being tested, collected while a personal-path lesson or exam is open.
+    @ObservationIgnored private var tallyOwner: String?
+    @ObservationIgnored private var tallySounds: Set<String> = []
+    @ObservationIgnored private var tally: [String: [Int]] = [:]
+
+    private func startTally(_ owner: String, sounds: [String]) {
+        guard tallyOwner != owner else { return }
+        tallyOwner = owner
+        tallySounds = Set(sounds)
+        tally = [:]
+    }
 
     var pathLessons: [PathLesson] { snapshot.pathLessons }
 
@@ -197,13 +208,13 @@ final class ProgressStore {
 
     /// Safe to call again on the same lesson (e.g. when the view reappears after a sheet).
     func startPathLesson(_ lesson: PathLesson) {
-        guard tallyLesson != lesson.index else { return }
-        tallyLesson = lesson.index
-        tallyFocus = lesson.focus
-        tally = []
+        startTally("lesson:\(lesson.index)", sounds: [lesson.focus])
     }
 
-    var pathLessonScore: Int? { tally.isEmpty ? nil : tally.reduce(0, +) / tally.count }
+    var pathLessonScore: Int? {
+        let all = tally.values.flatMap { $0 }
+        return all.isEmpty ? nil : all.reduce(0, +) / all.count
+    }
 
     func finishPathLesson(_ lesson: PathLesson) {
         snapshot.pathResults[String(lesson.index)] = PathResult(score: pathLessonScore, date: .now)
@@ -212,9 +223,57 @@ final class ProgressStore {
     }
 
     func abandonPathLesson() {
-        tallyLesson = nil
-        tallyFocus = nil
-        tally = []
+        tallyOwner = nil
+        tallySounds = []
+        tally = [:]
+    }
+
+    // MARK: Path exams
+
+    static let lessonsPerExam = 4
+
+    var pathExams: [PathExam] { snapshot.pathExams }
+
+    func examResult(_ exam: PathExam) -> ExamResult? { snapshot.examResults[String(exam.index)] }
+
+    /// The exam that is due: one after every `lessonsPerExam` finished lessons, until it is taken.
+    var dueExamIndex: Int? {
+        let finished = snapshot.pathLessons.filter { pathResult($0) != nil }.count
+        let index = finished / Self.lessonsPerExam
+        guard index >= 1, snapshot.examResults[String(index)] == nil else { return nil }
+        return index
+    }
+
+    var dueExam: PathExam? {
+        guard let index = dueExamIndex else { return nil }
+        return snapshot.pathExams.first { $0.index == index }
+    }
+
+    func addExam(_ exam: PathExam) {
+        snapshot.pathExams.removeAll { $0.index == exam.index }
+        snapshot.pathExams.append(exam)
+    }
+
+    func startExam(_ exam: PathExam) {
+        startTally("exam:\(exam.index)", sounds: exam.sounds)
+    }
+
+    /// Average speaking score per exam sound so far.
+    var examSpeaking: [String: Int] {
+        tally.compactMapValues { $0.isEmpty ? nil : $0.reduce(0, +) / $0.count }
+    }
+
+    func finishExam(_ exam: PathExam, listeningRight: Int, listeningTotal: Int) {
+        snapshot.examResults[String(exam.index)] = ExamResult(listeningRight: listeningRight, listeningTotal: listeningTotal,
+                                                              speaking: examSpeaking, date: .now)
+        abandonPathLesson()
+        addXP(40)
+    }
+
+    func examRequest(level: String, topics: [String], index: Int) -> PathRequest {
+        var request = pathRequest(level: level, topics: topics)
+        request.examIndex = index
+        return request
     }
 
     /// Everything the server needs to plan the next lesson: per-sound results, skills and recent lessons.
@@ -237,7 +296,8 @@ final class ProgressStore {
         }
         return PathRequest(level: level, topics: topics, nextIndex: (snapshot.pathLessons.map(\.index).max() ?? 0) + 1,
                            sounds: sounds, skills: skills, history: Array(history),
-                           recentWords: snapshot.pathLessons.suffix(12).flatMap { $0.words.map(\.word) })
+                           recentWords: snapshot.pathLessons.suffix(12).flatMap { $0.words.map(\.word) }
+                               + snapshot.pathExams.suffix(3).flatMap(\.keywords))
     }
 
     #if DEBUG
@@ -249,6 +309,20 @@ final class ProgressStore {
         snapshot.completedLessons = Set(finishedSounds)
         snapshot.pathLessons = []
         snapshot.pathResults = [:]
+        snapshot.pathExams = []
+        snapshot.examResults = [:]
+    }
+
+    /// UI tests: the same learner after four finished path lessons, so the first exam is due.
+    func seedFinishedLessons(_ focuses: [String], symbol: (String) -> String) {
+        snapshot.pathLessons = focuses.enumerated().map { i, focus in
+            PathLesson(index: i + 1, title: "Âm /\(symbol(focus))/", focus: focus, contrast: nil, difficulty: 2,
+                       reasonVi: "Bài mẫu cho kiểm thử.", tipVi: nil, words: [], pairs: [], sentences: [],
+                       exercises: nil, source: "rules")
+        }
+        snapshot.pathResults = Dictionary(uniqueKeysWithValues: focuses.indices.map {
+            (String($0 + 1), PathResult(score: 60 + 5 * $0, date: .now))
+        })
     }
     #endif
 

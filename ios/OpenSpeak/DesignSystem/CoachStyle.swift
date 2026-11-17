@@ -131,6 +131,8 @@ struct LessonRow: View {
     let done: Bool
     let current: Bool
     let locked: Bool
+    /// Replaces "Bài N" above the title (e.g. for an exam).
+    var caption: String? = nil
 
     var body: some View {
         HStack(spacing: 16) {
@@ -139,7 +141,7 @@ struct LessonRow: View {
                 .frame(width: 36)
                 .foregroundStyle(current ? Theme.primary : (locked ? Color.secondary : Theme.glow))
             VStack(alignment: .leading, spacing: 3) {
-                Text("Bài \(number)").font(.caption).foregroundStyle(current ? Theme.background.opacity(0.7) : .secondary)
+                Text(caption ?? "Bài \(number)").font(.caption).foregroundStyle(current ? Theme.background.opacity(0.7) : .secondary)
                 Text(title).font(.headline).foregroundStyle(current ? Theme.background : Theme.ink)
                 Text(kind).font(.caption).foregroundStyle(current ? Theme.background.opacity(0.6) : .secondary)
             }

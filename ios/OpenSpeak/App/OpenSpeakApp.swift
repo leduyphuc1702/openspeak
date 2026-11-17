@@ -25,6 +25,7 @@ struct OpenSpeakApp: App {
         }
         if let seed = environment["OPENSPEAK_SEED_PATH"] {
             store.seedForUITests(finishedSounds: seed == "graduated" ? content.phonemes.map(\.id) : [])
+            if seed == "exam" { store.seedFinishedLessons(["R", "IH", "TH", "L"]) { content.phoneme($0)?.symbol ?? $0 } }
         }
         #endif
         _progress = State(initialValue: store)

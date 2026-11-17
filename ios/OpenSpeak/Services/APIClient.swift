@@ -86,10 +86,11 @@ struct APIClient {
         try await get("v1/phonemize", query: ["text": text])
     }
 
-    func assess(text: String, audio: URL, reference: URL?, feedback: Bool = true) async throws -> Assessment {
+    func assess(text: String, audio: URL, reference: URL?, feedback: Bool = true, skipUnknown: Bool = false) async throws -> Assessment {
         var form = MultipartForm()
         form.addField("text", text)
         form.addField("feedback", feedback ? "true" : "false")
+        if skipUnknown { form.addField("skip_unknown", "true") }
         try form.addFile("audio", url: audio, mimeType: "audio/wav")
         if let reference {
             try form.addFile("reference_audio", url: reference, mimeType: "audio/wav")
@@ -153,7 +154,15 @@ struct APIClient {
 
     /// The next lesson of the endless path, planned by the server from the learner's own results.
     func pathNext(_ request: PathRequest) async throws -> PathLesson {
-        try await postJSON("v1/path/next", body: request, timeout: 90)
+        try await postJSON("v1/path/next", body: request, timeout: 180)
+    }
+
+    func pathExam(_ request: PathRequest) async throws -> PathExam {
+        try await postJSON("v1/path/exam", body: request, timeout: 180)
+    }
+
+    func exercises(_ request: ExerciseRequest) async throws -> ExerciseSet {
+        try await postJSON("v1/exercises", body: request, timeout: 180)
     }
 
     // MARK: AI roleplay

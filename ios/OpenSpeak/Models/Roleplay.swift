@@ -31,10 +31,15 @@ struct RoleplayTurn: Codable, Hashable {
     let hintVi: String?
 }
 
-struct RoleplayMessage: Identifiable, Hashable {
+struct RoleplayMessage: Identifiable {
     let id = UUID()
     let fromAI: Bool
-    let text: String
+    var text: String
     var corrections: [RoleplayTurn.Correction] = []
     var betterVersion: String?
+    /// The learner's recording of a spoken turn, scored by the phoneme model.
+    var audio: URL?
+    var assessment: Assessment?
+    var scoring = false
+    var scoreError: String?
 }

@@ -182,3 +182,11 @@ def test_check_reports_provider_errors(monkeypatch, post):
 ])
 def test_provider_error_text(body, shown):
     assert main._provider_error(body) == shown
+
+
+def test_anthropic_thinking_that_uses_the_whole_budget_is_reported():
+    from app.llm import _read_anthropic
+    import pytest as _pytest
+    with _pytest.raises(ValueError, match="max_tokens"):
+        _read_anthropic({"stop_reason": "max_tokens", "content": [{"type": "thinking", "thinking": ""}]})
+    assert _read_anthropic({"content": [{"type": "thinking", "thinking": ""}, {"type": "text", "text": "{}"}]}) == "{}"

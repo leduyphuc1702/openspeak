@@ -76,6 +76,8 @@ TURN_PROMPT = (
     "Đọc lịch sử hội thoại và câu mới nhất của học viên, rồi: (1) trả lời tự nhiên, ngắn (1-2 câu), "
     "ở đúng trình độ, và gợi mở để học viên làm nhiệm vụ còn lại; (2) sửa lỗi ngữ pháp/từ vựng/diễn đạt "
     "chưa tự nhiên trong câu mới nhất (tối đa 3 lỗi, bỏ qua lỗi viết hoa và dấu câu vì câu đến từ nhận dạng giọng nói); "
+    "Câu nói được nhận dạng từ giọng nói, nên một từ lạc ngữ cảnh có thể do phát âm sai (ví dụ 'sink' thay cho "
+    "'think', 'ship' thay cho 'sheep'): khi đó thêm vào corrections và giải thích cách phát âm từ đúng trong explain_vi. "
     "(3) đánh dấu nhiệm vụ nào học viên đã hoàn thành tính đến giờ. Trả về JSON: "
     '{{"reply": "...", "corrections": [{{"original": "...", "better": "...", "explain_vi": "..."}}], '
     '"tasks_done": [true/false, ...], "better_version": "cả câu của học viên viết lại tự nhiên hơn", '
