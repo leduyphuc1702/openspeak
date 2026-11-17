@@ -70,11 +70,20 @@ struct APIClient {
         self.baseURL = url
     }
 
-    /// Uses the address saved in Settings, and the learner's own LLM if they turned it on.
+    /// Uses the address saved in Settings, the learner's own LLM if they turned it on, and the
+    /// server access key if the server asks for one.
     static func current() throws -> APIClient {
         var client = try APIClient(baseURL: UserDefaults.standard.string(forKey: storageKey) ?? defaultBaseURL)
-        client.session = UserLLM.session()
+        client.session = session()
         return client
+    }
+
+    /// A session that adds the learner's LLM headers and the server access key to every request.
+    /// Passing `accessKey` tests a key that has been typed but not saved yet.
+    static func session(accessKey: String? = nil) -> URLSession {
+        var headers = UserLLM.load().headers
+        headers.merge(ServerAccess.authorization(accessKey)) { _, new in new }
+        return SessionCache.shared.session(for: headers)
     }
 
     func health() async -> Bool {

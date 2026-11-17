@@ -23,10 +23,11 @@ from .feedback import pronunciation_feedback
 from .llm import HEADER_BASE_URL, HEADER_MODEL, Image, LLMClient, LLMConfigError, client_from_env, client_from_headers
 from .phonetics import PHONE_IPA, Lexicon, UnknownWordError, expected_intonation, tokenize
 from .scoring import Assessor, NoSpeechError
+from .security import SecurityMiddleware, access_info
 from .word_audio import Throttled, WordAudio
 
 log = logging.getLogger("openspeak")
-app = FastAPI(title="OpenSpeak pronunciation API", version="0.2.0")
+app = FastAPI(title="OpenSpeak pronunciation API", version="0.3.0")
 
 # Optional folder of files to hand out (e.g. a test build of the iOS app), served at /download/.
 if os.getenv("DOWNLOAD_DIR"):
@@ -92,6 +93,8 @@ class ClientLLM:
 
 
 app.add_middleware(ClientLLM)
+# Added last, so it runs first: access key, rate limit and body size before any parsing.
+app.add_middleware(SecurityMiddleware)
 
 
 @lru_cache(maxsize=1)
@@ -125,7 +128,8 @@ def known_words_only(lexicon: Lexicon, text: str):
 @app.get("/health")
 async def health():
     source = "client" if _client_llm.get() else "server" if get_server_llm() else None
-    return {"ok": True, "llm": source is not None, "llm_source": source, "dictionary": get_dictionary().available}
+    return {"ok": True, "llm": source is not None, "llm_source": source,
+            "dictionary": get_dictionary().available, **access_info()}
 
 
 def _provider_error(body: str) -> str:

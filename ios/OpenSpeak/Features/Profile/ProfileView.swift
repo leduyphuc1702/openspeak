@@ -9,6 +9,8 @@ struct ProfileView: View {
     @AppStorage(Prefs.dailyGoal) private var dailyGoal = 60
     @AppStorage(Prefs.onboarded) private var onboarded = true
     @State private var status: String?
+    @State private var accessKey = ServerAccess.key
+    @State private var savedAccessKey = ServerAccess.key
     @State private var confirmReset = false
 
     var body: some View {
@@ -50,19 +52,30 @@ struct ProfileView: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         #endif
-                    Button("Kiểm tra kết nối") {
-                        Task {
-                            let ok = await ((try? APIClient(baseURL: backendURL))?.health() ?? false)
-                            status = ok ? "Đã kết nối máy chủ chấm điểm." : "Không kết nối được."
-                        }
+                        .accessibilityIdentifier("server.url")
+                    SecureField("Khoá truy cập (nếu máy chủ yêu cầu)", text: $accessKey)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                        .accessibilityIdentifier("server.key")
+                    HStack {
+                        Button("Lưu khoá") { saveAccessKey() }
+                            .disabled(accessKey == savedAccessKey)
+                            .accessibilityIdentifier("server.save")
+                        Spacer()
+                        Button("Kiểm tra kết nối") { Task { await checkServer() } }
+                            .accessibilityIdentifier("server.check")
                     }
+                    .buttonStyle(.borderless)
                     if let status {
                         Text(status).font(.footnote).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("server.status")
                     }
                 } header: {
                     Text("Máy chủ AI")
                 } footer: {
-                    Text("Bản cài lên iPhone đã điền sẵn máy chủ lúc build. Muốn dùng máy khác, nhập địa chỉ của nó, ví dụ http://192.168.1.10:8000 nếu cùng mạng Wi‑Fi. Trên Simulator dùng http://localhost:8000.")
+                    Text("Bản phát hành trên GitHub không kèm máy chủ nào. Chạy backend của bạn rồi nhập địa chỉ tại đây: http://192.168.1.10:8000 nếu cùng mạng Wi‑Fi, http://localhost:8000 trên Simulator. Nếu máy chủ đặt khoá truy cập (OPENSPEAK_API_KEYS), nhập khoá đó; khoá lưu trong Keychain của máy. Backend mở ra Internet cần HTTPS.")
                 }
 
                 UserLLMSection()
@@ -85,6 +98,23 @@ struct ProfileView: View {
         .confirmationDialog("Xoá toàn bộ tiến độ?", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("Xoá", role: .destructive) { progress.reset() }
         }
+    }
+
+    private func saveAccessKey() {
+        do {
+            try ServerAccess.save(accessKey)
+            savedAccessKey = ServerAccess.key
+            status = accessKey.isEmpty ? "Đã xoá khoá truy cập." : "Đã lưu khoá truy cập."
+        } catch {
+            status = error.localizedDescription
+        }
+    }
+
+    private func checkServer() async {
+        var client = try? APIClient(baseURL: backendURL)
+        client?.session = APIClient.session(accessKey: accessKey)
+        let ok = await (client?.health() ?? false)
+        status = ok ? "Đã kết nối máy chủ chấm điểm." : "Không kết nối được. Kiểm tra địa chỉ, mạng và khoá truy cập."
     }
 }
 

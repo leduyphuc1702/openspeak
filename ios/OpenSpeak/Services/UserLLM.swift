@@ -94,7 +94,7 @@ struct UserLLM: Equatable {
     }
 }
 
-private final class SessionCache: @unchecked Sendable {
+final class SessionCache: @unchecked Sendable {
     static let shared = SessionCache()
     private let lock = NSLock()
     private var headers: [String: String] = [:]

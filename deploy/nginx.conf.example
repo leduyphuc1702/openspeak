@@ -1,0 +1,22 @@
+# Reverse proxy for a shared OpenSpeak server. Run uvicorn on 127.0.0.1:8000 with
+# TRUST_PROXY=1, and keep the firewall closed on 8000.
+server {
+    listen 443 ssl http2;
+    server_name speak.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/speak.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/speak.example.com/privkey.pem;
+
+    # Must be at least OPENSPEAK_MAX_BODY_MB.
+    client_max_body_size 16m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Scoring and LLM lessons can take a couple of minutes.
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.3.0"
+    CURRENT_PROJECT_VERSION: "3"
 targets:
   OpenSpeak:
     type: application
@@ -28,6 +28,8 @@ targets:
       path: OpenSpeak/Info.plist
       properties:
         CFBundleDisplayName: OpenSpeak
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSMicrophoneUsageDescription: OpenSpeak cần micro để nghe và chấm phát âm của bạn.
