@@ -1,17 +1,23 @@
-"""Multiple-choice exercises for one sound: questions where the learner has to
-hear the sound or know which spellings carry it.
+"""Exercises for one sound that cannot be answered by elimination or by reading
+the options: the learner has to hear the sound, write what they heard, or
+know which spellings carry it.
 
-Three kinds, all answered by tapping one option:
-- pair: hear one word of a minimal pair (seat / sit), pick it;
-- gap: hear a whole sentence, pick which word of a minimal pair filled the gap;
-- spelling: see three or four similarly spelled words (bread / seat / great), pick
-  the only one that has the sound.
+Four kinds:
+- sequence: the app reads three words of a minimal pair (sheep, ship, sheep);
+  the learner marks each one. Both words occur, so there are six possible
+  answers instead of two, and the options carry no transcription to read.
+- dictation: the app reads a whole sentence and the learner types the missing
+  word. The other word of the minimal pair is kept to explain a near miss.
+- sort: four or five similarly spelled words (bread / seat / great / head);
+  the learner marks every word that has the sound. The server works out the
+  marks itself from the lexicon.
+- build: the app reads a short word and the learner builds its transcription
+  from symbol tiles, which include the sounds it is confused with.
 
-The LLM writes them for the learner's topics. The server never trusts its answers:
-every word is looked up in the lexicon the scorer uses, minimal pairs are
-re-derived, and for spelling questions the server itself works out which option
-has the sound, rejecting the question unless exactly one does. Without an LLM,
-pairs and spelling questions are built from path_pool.
+The LLM writes pairs, gap sentences and spelling sets for the learner's topics.
+The server never trusts its answers: every word is looked up in the lexicon the
+scorer uses, minimal pairs are re-derived and sort marks are computed. Without
+an LLM, everything is built from path_pool.
 """
 from __future__ import annotations
 
@@ -33,16 +39,20 @@ log = logging.getLogger("openspeak.exercises")
 WORD_RE = re.compile(r"[a-z][a-z']{0,19}")
 SENTENCE_RE = re.compile(r"[A-Za-z][A-Za-z' ,.?!-]{3,118}")
 BLANK = "___"
+SEQUENCE_LENGTH = 3
+BUILD_MAX_PHONES = 6
 
 RULES_VI = (
-    "Bài tập trắc nghiệm, mỗi câu người học chạm một đáp án. Chỉ ra loại câu buộc người học phải NGHE được âm "
-    "hoặc biết cách viết nào đọc ra âm đó; không ra câu nhìn ký hiệu là đoán được. "
-    "'pairs': cặp từ tối thiểu chỉ khác đúng một âm (âm luyện và âm dễ nhầm), app đọc một từ, người học chọn. "
+    "Người học không chọn đáp án trong vài lựa chọn mà phải NGHE rồi đánh dấu, GÕ lại từ nghe được, hoặc "
+    "phân loại từ theo âm; vì vậy đề phải không đoán được bằng nghĩa hay bằng mặt chữ. "
+    "'pairs': cặp từ tối thiểu chỉ khác đúng một âm (âm luyện và âm dễ nhầm); app đọc ba lần lẫn lộn hai từ, "
+    "người học đánh dấu từng lần. "
     "'gaps': một câu tự nhiên theo chủ đề người học, chứa 'target'; 'distractor' là từ tạo cặp tối thiểu với "
-    "target qua âm luyện. App đọc cả câu, người học chọn từ đã nghe. Thay target bằng distractor câu vẫn phải "
+    "target qua âm luyện. App đọc cả câu, người học GÕ từ ở chỗ trống. Thay target bằng distractor câu vẫn phải "
     "đúng ngữ pháp và có nghĩa, để không thể đoán bằng nghĩa mà phải nghe. "
-    "'spelling': 3-4 từ thông dụng có cách viết giống nhau (cùng cụm chữ, ví dụ 'ea' trong bread, seat, great) "
-    "nhưng CHỈ MỘT từ có âm luyện; 'note_vi' giải thích ngắn bẫy chính tả. "
+    "'spelling': 4-5 từ thông dụng có chung một cụm chữ (ví dụ 'ea' trong bread, seat, great, heat), trong đó "
+    "có cả từ CÓ và từ KHÔNG có âm luyện; người học đánh dấu mọi từ có âm. 'note_vi' nêu ngắn quy tắc hoặc bẫy "
+    "chính tả để người học nhớ. "
     "Mọi từ là từ tiếng Anh đơn, viết thường (trừ trong câu), không tên riêng, không chữ số. "
     "Mỗi câu có 'topic' là id một chủ đề của người học; rải đều các chủ đề; không lặp lại từ khoá giữa các câu "
     "và không dùng từ trong 'avoid_words'. 'angles' gợi ý góc nhìn cho từng chủ đề để đề khác các lần trước."
@@ -94,7 +104,8 @@ def _pair_options(lexicon: Lexicon, a: str, b: str, sound: str) -> Optional[List
 
 
 def exercise(kind: str, sound: str, options: List[Dict], answer: int, rng: random.Random, topic: Optional[str] = None,
-             text: Optional[str] = None, sentence: Optional[str] = None, note: str = "", meaning: str = "") -> Dict:
+             text: Optional[str] = None, sentence: Optional[str] = None, note: str = "", meaning: str = "",
+             marks: Optional[List[bool]] = None) -> Dict:
     order = list(range(len(options)))
     rng.shuffle(order)
     return {
@@ -102,12 +113,88 @@ def exercise(kind: str, sound: str, options: List[Dict], answer: int, rng: rando
         "sound": sound,
         "options": [options[i] for i in order],
         "answer": order.index(answer),
+        "order": None,
+        "marks": [marks[i] for i in order] if marks else None,
+        "tiles": None,
+        "solution": None,
+        "accept": None,
         "text": text,
         "sentence": sentence,
         "note_vi": note or None,
         "meaning_vi": meaning or None,
         "topic": topic,
     }
+
+
+def sequence(sound: str, options: List[Dict], rng: random.Random, topic: Optional[str] = None) -> Dict:
+    """Three readings of a minimal pair; both words occur, so "the same word three times" is never the answer."""
+    ex = exercise("sequence", sound, options, 0, rng, topic)
+    order = [0, 1] + [rng.randrange(2) for _ in range(SEQUENCE_LENGTH - 2)]
+    rng.shuffle(order)
+    ex["order"] = order
+    return ex
+
+
+def tile_distractors(sound: str, phones: Sequence[str], contrast: Optional[str] = None) -> List[str]:
+    """Sounds a learner would put in the word's place: the lesson's contrast, then what each sound is confused with."""
+    near = ([contrast] if contrast else []) + CONFUSABLE.get(sound, [])
+    near += [c for p in phones if p != sound for c in CONFUSABLE.get(p, [])[:1]]
+    return [c for c in dict.fromkeys(near) if c and c not in phones and PHONE_IPA[c] not in
+            {PHONE_IPA[p] for p in phones}][:3]
+
+
+def build(lexicon: Lexicon, word: str, sound: str, rng: random.Random, contrast: Optional[str] = None,
+          topic: Optional[str] = None, meaning: str = "") -> Optional[Dict]:
+    """Hear a short word, build its transcription from tiles: its own symbols plus the ones it is confused with."""
+    try:
+        pron = lexicon.lookup(word)
+    except UnknownWordError:
+        return None
+    phones = [p.id for p in pron.phones]
+    if not has_sound(pron.phones, sound) or len(phones) > BUILD_MAX_PHONES:
+        return None
+    # Unstressed IY is written /i/ in the transcription; keep words whose symbols are the plain ones.
+    if any(p.id == "IY" and p.stress == 0 for p in pron.phones):
+        return None
+    distractors = tile_distractors(sound, phones, contrast)
+    if not distractors:
+        return None
+    solution = [PHONE_IPA[p] for p in phones]
+    tiles = list(dict.fromkeys(solution)) + [PHONE_IPA[d] for d in distractors]
+    rng.shuffle(tiles)
+    ex = exercise("build", sound, [word_dict(lexicon, word, meaning)], 0, rng, topic, meaning=meaning)
+    ex["tiles"], ex["solution"] = tiles, solution
+    return ex
+
+
+def sort_marks(lexicon: Lexicon, words: Sequence[str], sound: str) -> Optional[List[Optional[bool]]]:
+    """Per word: True when its main reading has the sound (stressed, for a vowel), False when no reading has it
+    at all, None when it is in between (only another reading, or unstressed) and must not be asked about."""
+    out: List[Optional[bool]] = []
+    for w in words:
+        try:
+            readings = lexicon.pronunciations(w)
+        except UnknownWordError:
+            return None
+        if has_sound(readings[0].phones, sound):
+            out.append(True)
+        elif not any(sound in [p.id for p in r.phones] for r in readings):
+            out.append(False)
+        else:
+            out.append(None)
+    return out
+
+
+def sort_exercise(lexicon: Lexicon, words: Sequence[str], sound: str, rng: random.Random, topic: Optional[str] = None,
+                  note: str = "") -> Optional[Dict]:
+    marks = sort_marks(lexicon, words, sound)
+    if marks is None:
+        return None
+    kept = [(w, m) for w, m in zip(words, marks) if m is not None]
+    if len(kept) < 3 or not any(m for _, m in kept) or all(m for _, m in kept):
+        return None
+    options = [word_dict(lexicon, w) for w, _ in kept[:5]]
+    return exercise("sort", sound, options, 0, rng, topic, note=note, marks=[m for _, m in kept[:5]])
 
 
 class Checker:
@@ -147,7 +234,7 @@ class Checker:
         if not options or not self.fresh(a, b, recent=False):
             return None
         self.take(a, b)
-        return exercise("pair", sound, options, self.rng.randrange(2), self.rng, self.topic(item))
+        return sequence(sound, options, self.rng, self.topic(item))
 
     def gap(self, item) -> Optional[Dict]:
         if not isinstance(item, dict) or not (sound := self.sound(item)):
@@ -169,31 +256,31 @@ class Checker:
             return None
         self.take(target, distractor)
         text = sentence[:match.start()] + BLANK + sentence[match.end():]
-        return exercise("gap", sound, options, 0, self.rng, self.topic(item), text=text, sentence=sentence,
-                        meaning=_text(item.get("meaning_vi"), 160))
+        ex = exercise("dictation", sound, options, 0, self.rng, self.topic(item), text=text, sentence=sentence,
+                      meaning=_text(item.get("meaning_vi"), 160))
+        # Typing a homophone (meat for meet) means the word was heard right.
+        ex["accept"] = [target] + [w for w in self.lexicon.homophones(target) if WORD_RE.fullmatch(w)][:8]
+        return ex
 
     def spelling(self, item) -> Optional[Dict]:
         if not isinstance(item, dict) or not (sound := self.sound(item)):
             return None
-        words = list(dict.fromkeys(_word(w) for w in (item.get("words") or [])[:4]))
+        words = [w for w in dict.fromkeys(_word(w) for w in (item.get("words") or [])[:6]) if self.fresh(w)]
         if len(words) < 3 or not all(WORD_RE.fullmatch(w) for w in words):
             return None
-        try:
-            readings = [self.lexicon.pronunciations(w) for w in words]
-        except UnknownWordError:
+        ex = sort_exercise(self.lexicon, words, sound, self.rng, self.topic(item), _text(item.get("note_vi"), 200))
+        if ex is not None:
+            self.take(*(o["word"] for o in ex["options"]))
+        return ex
+
+    def build(self, word: str, sound: str, contrast: Optional[str] = None, topic: Optional[str] = None,
+              meaning: str = "") -> Optional[Dict]:
+        if not WORD_RE.fullmatch(word) or not self.fresh(word, recent=False):
             return None
-        # The answer must have the sound in its main reading, and no other option in any reading.
-        has_main = [has_sound(r[0].phones, sound) for r in readings]
-        has_any = [any(sound in [p.id for p in x.phones] for x in r) for r in readings]
-        if sum(has_main) != 1 or sum(has_any) != 1:
-            return None
-        answer = has_main.index(True)
-        if not self.fresh(words[answer]):
-            return None
-        self.take(*words)
-        options = [word_dict(self.lexicon, w) for w in words]
-        return exercise("spelling", sound, options, answer, self.rng, self.topic(item),
-                        note=_text(item.get("note_vi"), 200))
+        ex = build(self.lexicon, word, sound, self.rng, contrast, topic, meaning)
+        if ex is not None:
+            self.take(word)
+        return ex
 
     def collect(self, data: Dict) -> Dict[str, List[Dict]]:
         out: Dict[str, List[Dict]] = {"pairs": [], "gaps": [], "spelling": []}
@@ -202,6 +289,18 @@ class Checker:
                 if (ex := check(item)) is not None:
                     out[key].append(ex)
         return out
+
+
+def builds_from(checker: Checker, candidates: Iterable[str], sound: str, n: int, contrast: Optional[str] = None,
+                topic: Optional[str] = None) -> List[Dict]:
+    """Up to n build questions from candidate words, shortest first so the tiles stay manageable."""
+    out = []
+    for w in sorted(dict.fromkeys(candidates), key=len):
+        if len(out) >= n:
+            break
+        if (ex := checker.build(w, sound, contrast, topic)) is not None:
+            out.append(ex)
+    return out
 
 
 # --- Without an LLM ---
@@ -247,7 +346,7 @@ def has_sound(reading: Sequence, sound: str) -> bool:
 
 def rules_spelling(lexicon: Lexicon, words: Iterable[str], sound: str, rng: random.Random, n: int,
                    used: Set[str]) -> List[Dict]:
-    """Spelling traps from a word list: one word where the letters spell the sound, two where they do not."""
+    """Sort questions from a word list: four words sharing letters, one or two of which spell the sound with them."""
     readings = {}
     for w in words:
         try:
@@ -267,17 +366,17 @@ def rules_spelling(lexicon: Lexicon, words: Iterable[str], sound: str, rng: rand
                   if g in w and w not in used and not any(sound in [p.id for p in x.phones] for x in r)]
         if not answers or len(others) < 2:
             continue
-        answer = rng.choice(answers)
-        distractors = rng.sample(others, 2)
-        used.update([answer, *distractors])
-        options = [word_dict(lexicon, w) for w in [answer, *distractors]]
-        out.append(exercise("spelling", sound, options, 0, rng,
-                            note=f"Cả ba từ đều có chữ \"{g}\", nhưng chỉ trong {answer} chữ đó đọc là {sym(sound)}."))
+        right = rng.sample(answers, min(len(answers), rng.choice([1, 2])))
+        wrong = rng.sample(others, min(len(others), 4 - len(right)))
+        used.update([*right, *wrong])
+        options = [word_dict(lexicon, w) for w in [*right, *wrong]]
+        out.append(exercise("sort", sound, options, 0, rng, marks=[True] * len(right) + [False] * len(wrong),
+                            note=f"Các từ đều có chữ \"{g}\", nhưng chỉ trong {', '.join(right)} chữ đó đọc là {sym(sound)}."))
     return out
 
 
 def pairs_as_exercises(pairs: Sequence[Dict], sound: str, rng: random.Random) -> List[Dict]:
-    return [exercise("pair", sound, [p["a"], p["b"]], rng.randrange(2), rng) for p in pairs]
+    return [sequence(sound, [p["a"], p["b"]], rng) for p in pairs]
 
 
 def interleave(*groups: Sequence[Dict]) -> List[Dict]:
@@ -303,10 +402,12 @@ class ExerciseRequest(BaseModel):
 
 PROMPT = (
     "Bạn là giáo viên phát âm tiếng Anh giọng Mỹ cho người Việt đi làm. Soạn bài tập cho một âm. " + RULES_VI +
-    " Soạn 3 'pairs', 2 'gaps', 3 'spelling'. "
+    " Soạn 3 'pairs', 2 'gaps', 2 'spelling'. Thêm 'words': 4 từ ngắn (tối đa 6 âm) theo chủ đề có âm luyện "
+    "ở âm tiết nhấn, để người học nghe rồi ghép phiên âm. "
     'Trả về JSON: {"pairs": [{"sound": "IY", "a": "seat", "b": "sit", "topic": "work"}], '
     '"gaps": [{"sound": "IY", "sentence": "...", "target": "...", "distractor": "...", "meaning_vi": "...", "topic": "..."}], '
-    '"spelling": [{"sound": "IY", "words": ["...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
+    '"spelling": [{"sound": "IY", "words": ["...", "...", "...", "..."], "note_vi": "...", "topic": "..."}], '
+    '"words": [{"word": "...", "meaning_vi": "...", "topic": "..."}]}'
 )
 
 
@@ -330,6 +431,7 @@ def for_sound(client: Optional[LLMClient], lexicon: Lexicon, req: ExerciseReques
     topics = [t for t in req.topics if t in vocab.TOPIC_TITLES] or ["daily"]
     found: Dict[str, List[Dict]] = {"pairs": [], "gaps": [], "spelling": []}
     source = "rules"
+    data: Dict = {}
     checker = Checker(lexicon, [req.sound], rng, topics, req.avoid_words[-80:], 10)
     if client is not None:
         payload = {
@@ -341,8 +443,9 @@ def for_sound(client: Optional[LLMClient], lexicon: Lexicon, req: ExerciseReques
             "avoid_words": req.avoid_words[-80:],
         }
         try:
-            data = client.chat_json(PROMPT, json.dumps(payload, ensure_ascii=False))
-            if isinstance(data, dict):
+            reply = client.chat_json(PROMPT, json.dumps(payload, ensure_ascii=False))
+            if isinstance(reply, dict):
+                data = reply
                 found = checker.collect(data)
                 source = "llm" if any(found.values()) else "rules"
         except Exception:
@@ -355,9 +458,18 @@ def for_sound(client: Optional[LLMClient], lexicon: Lexicon, req: ExerciseReques
         found["pairs"] += pairs_as_exercises(extra[: 3 - len(found["pairs"])], req.sound, rng)
     if len(found["spelling"]) < 2:
         found["spelling"] += rules_spelling(lexicon, pool.words, req.sound, rng, 2 - len(found["spelling"]), used)
+    builds = []
+    for item in items(data.get("words")) if source == "llm" else []:
+        if isinstance(item, dict) and (ex := checker.build(_word(item.get("word")), req.sound, contrast,
+                                                             checker.topic(item), _text(item.get("meaning_vi"), 80))):
+            builds.append(ex)
+    if len(builds) < 2:
+        candidates = [w for w in pool.words if w not in used]
+        rng.shuffle(candidates)
+        builds += builds_from(checker, candidates[:300], req.sound, 2 - len(builds), contrast)
     return {
         "sound": req.sound,
         "contrast": contrast,
-        "exercises": interleave(found["pairs"][:3], found["spelling"][:3], found["gaps"][:2]),
+        "exercises": interleave(found["pairs"][:3], found["spelling"][:2], builds[:2], found["gaps"][:2]),
         "source": source,
     }

@@ -23,11 +23,21 @@ import numpy as np
 import soundfile as sf
 
 API = "https://commons.wikimedia.org/w/api.php"
-USER_AGENT = "OpenSpeak/0.2 (personal pronunciation study app)"
+# Wikimedia's User-Agent policy asks for contact details; upload.wikimedia.org answered the old
+# agent, which had none, with 429 and Retry-After: 120 on every file.
+USER_AGENT = "OpenSpeak/0.3 (https://github.com/leduyphuc1702/openspeak) python-urllib"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "cache" / "word_audio"
 WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]{0,39}")
 
 HttpGet = Callable[[str], bytes]
+
+
+class Throttled(Exception):
+    """Commons asked us to slow down; the app plays its own voice meanwhile."""
+
+    def __init__(self, retry_after: float):
+        super().__init__(f"Wikimedia Commons is rate limiting, retry in {retry_after:.0f} s")
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)
@@ -41,16 +51,19 @@ class Recording:
 
 
 def _http_get(url: str) -> bytes:
+    # The app is waiting for a word to play, so never sleep and retry here: give up at once.
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    for attempt in range(2):
-        try:
-            with urllib.request.urlopen(request, timeout=20) as response:
-                return response.read()
-        except urllib.error.HTTPError as e:
-            if e.code != 429 or attempt:
-                raise
-            time.sleep(min(float(e.headers.get("Retry-After") or 3), 10))
-    raise AssertionError("unreachable")
+    try:
+        with urllib.request.urlopen(request, timeout=6) as response:
+            return response.read()
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            try:
+                wait = float(e.headers.get("Retry-After") or 60)
+            except ValueError:
+                wait = 60.0
+            raise Throttled(wait) from e
+        raise
 
 
 def _strip_html(text: str) -> str:
@@ -58,9 +71,12 @@ def _strip_html(text: str) -> str:
 
 
 class WordAudio:
-    def __init__(self, http_get: HttpGet = _http_get, cache_dir: Path = CACHE_DIR):
+    def __init__(self, http_get: HttpGet = _http_get, cache_dir: Path = CACHE_DIR,
+                 clock: Callable[[], float] = time.monotonic):
         self.http_get = http_get
         self.cache_dir = cache_dir
+        self.clock = clock
+        self.quiet_until = 0.0
 
     def _api(self, **params) -> dict:
         params["format"] = "json"
@@ -122,13 +138,21 @@ class WordAudio:
                 return None
             if wav_path.exists():
                 return wav_path.read_bytes(), Recording(**meta)
-        found = self.find(word)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        if found is None:
-            meta_path.write_text("null")
-            return None
-        url, recording = found
-        wav = _to_wav(self.http_get(url))
+        if self.clock() < self.quiet_until:
+            raise Throttled(self.quiet_until - self.clock())
+        try:
+            found = self.find(word)
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            if found is None:
+                meta_path.write_text("null")
+                return None
+            url, recording = found
+            data = self.http_get(url)
+        except Throttled as e:
+            # Every lookup while throttled would only extend the block.
+            self.quiet_until = self.clock() + min(e.retry_after, 900)
+            raise
+        wav = _to_wav(data)
         wav_path.write_bytes(wav)
         meta_path.write_text(json.dumps(asdict(recording), ensure_ascii=False))
         return wav, recording

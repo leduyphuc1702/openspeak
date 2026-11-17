@@ -5,6 +5,7 @@ enum APIError: LocalizedError {
     case unknownWords([String])
     case server(String)
     case badURL
+    case busy(retryAfter: TimeInterval)
 
     var errorDescription: String? {
         switch self {
@@ -12,6 +13,7 @@ enum APIError: LocalizedError {
         case .unknownWords(let words): return "Chưa có phiên âm cho: \(words.joined(separator: ", "))"
         case .server(let message): return "Lỗi máy chủ: \(message)"
         case .badURL: return "Địa chỉ máy chủ không hợp lệ. Kiểm tra trong Hồ sơ > Cài đặt."
+        case .busy: return "Máy chủ đang bận, thử lại sau ít phút."
         }
     }
 }
@@ -161,6 +163,10 @@ struct APIClient {
         try await postJSON("v1/path/exam", body: request, timeout: 180)
     }
 
+    func vocabNext(_ request: VocabPathRequest) async throws -> VocabPathLesson {
+        try await postJSON("v1/vocab/next", body: request, timeout: 180)
+    }
+
     func exercises(_ request: ExerciseRequest) async throws -> ExerciseSet {
         try await postJSON("v1/exercises", body: request, timeout: 180)
     }
@@ -200,6 +206,9 @@ struct APIClient {
         let (data, response) = try await session.data(for: request)
         let http = response as? HTTPURLResponse
         if http?.statusCode == 404 { return nil }
+        if http?.statusCode == 503 {
+            throw APIError.busy(retryAfter: http?.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init) ?? 60)
+        }
         try Self.check(data, response)
         func header(_ name: String) -> String {
             http?.value(forHTTPHeaderField: name)?.removingPercentEncoding ?? ""

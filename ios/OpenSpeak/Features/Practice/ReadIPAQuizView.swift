@@ -78,11 +78,26 @@ struct ReadIPAQuizView: View {
     private func start() {
         let pool = content.readingWords
         questions = Array(pool.shuffled().prefix(10)).map { answer in
-            Question(answer: answer, options: pool.options(including: answer, count: 4, where: { $0.word == $1.word }))
+            Question(answer: answer, options: ([answer] + Self.lookalikes(of: answer, in: pool)).shuffled())
         }
         index = 0
         score = 0
         state = .unanswered
+    }
+
+    /// Three words that sound and look most like the answer, so the first letter or the length of the
+    /// transcription does not give it away; random ones let the first letter alone pick the answer about half the time.
+    static func lookalikes(of answer: WordEntry, in pool: [WordEntry]) -> [WordEntry] {
+        func similarity(_ w: WordEntry) -> Double {
+            let a = Set(answer.phones), b = Set(w.phones)
+            var score = Double(a.intersection(b).count) / Double(max(a.union(b).count, 1))
+            if w.phones.first == answer.phones.first { score += 1 }
+            if w.word.first == answer.word.first { score += 1 }
+            score -= Double(abs(w.phones.count - answer.phones.count)) * 0.2
+            return score
+        }
+        let ranked = pool.filter { $0.word != answer.word }.sorted { similarity($0) > similarity($1) }
+        return Array(ranked.prefix(5).shuffled().prefix(3))
     }
 
     private func answer(_ i: Int, in q: Question) {

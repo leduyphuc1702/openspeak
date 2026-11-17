@@ -12,8 +12,37 @@ struct VocabWord: Codable, Hashable, Identifiable {
     let connectedIpa: String?
     let phones: [String]
     let syllables: Int
+    /// From the vocabulary programme: a second sentence in another situation, with the word hidden in it,
+    /// and the form of the word that fills the gap.
+    var practiceEn: String? = nil
+    var practiceVi: String? = nil
+    var clozeEn: String? = nil
+    var clozeAnswer: String? = nil
 
     var id: String { word.lowercased() }
+}
+
+/// One lesson of the vocabulary programme (POST /v1/vocab/next).
+struct VocabPathLesson: Codable, Hashable, Identifiable {
+    let index: Int
+    let topic: String
+    let topicTitle: String
+    let situationVi: String?
+    let title: String
+    let goalVi: String?
+    let words: [VocabWord]
+    let source: String
+
+    var id: Int { index }
+    var writtenByAI: Bool { source == "llm" }
+}
+
+struct VocabPathRequest: Encodable {
+    let level: String
+    let topics: [String]
+    let lessonIndex: Int
+    let known: [String]
+    let weak: [String]
 }
 
 struct VocabLesson: Codable, Hashable {

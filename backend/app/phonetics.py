@@ -118,6 +118,7 @@ class Lexicon:
 
     def __init__(self, entries: Optional[Dict[str, List[List[str]]]] = None):
         self._entries = entries
+        self._by_sound: Optional[Dict[Tuple[str, ...], List[str]]] = None
 
     def _dict(self) -> Dict[str, List[List[str]]]:
         if self._entries is None:
@@ -135,6 +136,17 @@ class Lexicon:
         if not prons:
             raise UnknownWordError([word])
         return [WordPron(word, tuple(arpabet_to_phone(s) for s in p)) for p in prons]
+
+    def homophones(self, word: str) -> List[str]:
+        """Other spellings of the word's main pronunciation, stress ignored (meet: meat, mete)."""
+        if self._by_sound is None:
+            index: Dict[Tuple[str, ...], List[str]] = {}
+            for w, prons in self._dict().items():
+                for p in prons:
+                    index.setdefault(tuple(s.rstrip("012") for s in p), []).append(w)
+            self._by_sound = index
+        main = tuple(s.rstrip("012") for s in self._dict().get(word.lower(), [[]])[0])
+        return [w for w in self._by_sound.get(main, []) if w != word.lower()] if main else []
 
     def sentence(self, text: str) -> List[WordPron]:
         words = tokenize(text)

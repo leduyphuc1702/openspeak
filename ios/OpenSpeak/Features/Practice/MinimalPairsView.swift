@@ -74,7 +74,7 @@ struct PairDrillView: View {
             QuizHeader(index: round, total: rounds, score: score)
             Spacer()
             Button {
-                SpeechPlayer.shared.speak(words[target].word)
+                SpeechPlayer.shared.speak(words[target].word, varied: true)
             } label: {
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 40))
@@ -96,7 +96,9 @@ struct PairDrillView: View {
                     OptionButton(index: i, state: state, action: { answer(i) }) {
                         VStack(spacing: 4) {
                             Text(words[i].word).font(.title2.bold()).foregroundStyle(Theme.ink)
+                            // Shown only after answering: before, the learner should listen rather than read.
                             Text("/\(words[i].ipa)/").font(.subheadline).foregroundStyle(.secondary)
+                                .opacity(state.isAnswered ? 1 : 0)
                         }
                         .padding(.vertical, 12)
                     }
@@ -125,7 +127,7 @@ struct PairDrillView: View {
         let word = words[target].word
         Task {
             try? await Task.sleep(for: .milliseconds(350))
-            SpeechPlayer.shared.speak(word)
+            SpeechPlayer.shared.speak(word, varied: true)
         }
     }
 

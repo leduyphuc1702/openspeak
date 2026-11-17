@@ -157,17 +157,8 @@ final class WalkthroughTests: XCTestCase {
         guard tap(button("Mình đã hiểu")) else { return }
 
         shot("lesson-2-recognise")
-        let wrong = buttons(where: "label != %@ AND label MATCHES %@", symbol, "^\\S{1,2}$").firstMatch
-        if wrong.exists { wrong.tap(); shot("lesson-2-recognise-wrong") }
-        for round in 0..<3 {
-            guard tap(button(symbol)) else { return }
-            if round == 0 {
-                assertPinned(button("Tiếp"), "lesson recognise")
-                shot("lesson-2-recognise-right")
-            }
-            guard tap(button("Tiếp")) else { return }
-            Thread.sleep(forTimeInterval: 0.6)
-        }
+        XCTAssertFalse(symbol.isEmpty)
+        answerRecognise("lesson-2", context: "lesson recognise")
 
         guard text("Tô ký hiệu").waitForExistence(timeout: 5) else { shot("lesson-3-missing"); return }
         assertPinned(button("Tiếp tục"), "lesson trace")
@@ -419,34 +410,28 @@ final class WalkthroughTests: XCTestCase {
         let topic = buttons(where: "label CONTAINS 'Công việc' OR label CONTAINS 'Họp'").firstMatch
         for _ in 0..<4 where !topic.isHittable { app.swipeUp() }
         if tap(topic) {
-            _ = button("Học từ này").waitForExistence(timeout: 15)
+            _ = button("Từ tiếp theo").waitForExistence(timeout: 30)
+            assertPinned(button("Từ tiếp theo"), "vocab lesson card")
             scrollShots("vocab-lesson", pages: 2)
-            for card in 0..<12 where button("Học từ này").exists {
-                button("Học từ này").tap()
-                if card < 2 { scrollShots("word-card-\(card + 1)", pages: 2) }
+            for _ in 0..<12 where button("Từ tiếp theo").exists { button("Từ tiếp theo").tap() }
+            if tap(button("Bắt đầu nhớ lại")) {
+                answerDrills("topic-recall", until: button("Học thêm từ mới"))
             }
             assertPinned(button("Học thêm từ mới"), "vocab lesson done")
             shot("vocab-lesson-done")
             back()
         }
         scrollToTop()
-        let review = buttons(where: "label CONTAINS 'đến hạn'").firstMatch
-        if review.exists, review.isHittable {
+        let review = app.buttons["vocab.review"]
+        if review.waitForExistence(timeout: 3), review.isHittable {
             review.tap()
-            assertPinned(button("Xem nghĩa"), "word review front")
-            shot("word-review-front")
-            buttons(where: "label CONTAINS 'Chạm để xem nghĩa'").firstMatch.tapIfPresent()
-            assertPinned(button("Nhớ"), "word review back")
-            shot("word-review-back")
-            for _ in 0..<20 where !button("Xong").exists {
-                buttons(where: "label CONTAINS 'Chạm để xem nghĩa'").firstMatch.tapIfPresent()
-                guard button("Nhớ").waitForExistence(timeout: 2) else { break }
-                button("Nhớ").tap()
-            }
+            answerDrills("word-review", until: button("Xong"))
             assertPinned(button("Xong"), "word review summary")
             shot("word-review-summary")
             button("Xong").tapIfPresent()
             Thread.sleep(forTimeInterval: 0.8)
+        } else {
+            shot("word-review-none-due")
         }
         let saved = buttons(where: "label BEGINSWITH 'Sổ từ của tôi'").firstMatch
         for _ in 0..<8 where !saved.isHittable { app.swipeUp() }
@@ -851,29 +836,134 @@ extension WalkthroughTests {
 }
 
 extension WalkthroughTests {
-    /// Answers every question of a "Nghe và nhận âm" step, with shots of the first question of each kind
-    /// before and after answering. Asserts the old yes/no question is gone.
+    /// Hear a sound, tap its symbol, until four rounds are right first time. The test cannot hear, so it tries the
+    /// symbols in turn; a miss does not count and the step asks again.
+    func answerRecognise(_ prefix: String, context: String) {
+        var shotWrong = false, shotRight = false
+        for _ in 0..<40 where !text("Tô ký hiệu").exists {
+            let symbols = buttons(where: "identifier BEGINSWITH 'symbol.'")
+            guard symbols.firstMatch.waitForExistence(timeout: 5) else { break }
+            for i in 0..<symbols.count where !button("Tiếp").exists {
+                symbols.element(boundBy: i).tap()
+                if !button("Tiếp").exists, !shotWrong { shotWrong = true; shot("\(prefix)-recognise-wrong") }
+            }
+            guard button("Tiếp").exists else { break }
+            if !shotRight {
+                shotRight = true
+                assertPinned(button("Tiếp"), context)
+                shot("\(prefix)-recognise-right")
+            }
+            button("Tiếp").tap()
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+    }
+
+    /// Answers every question of a "Nghe và nhận âm" step, with shots of the first question of each kind before
+    /// and after checking. The test cannot hear, so most answers are wrong: those questions come back once at the
+    /// end, which is shot too. Asserts no question can be answered by tapping one of two options.
     func answerExercises(_ prefix: String, context: String) {
-        guard text("Nghe và nhận âm").waitForExistence(timeout: 60) else { shot("\(prefix)-missing"); return }
-        let kinds = [("pair", "Bạn nghe thấy từ nào?"), ("gap", "Nghe cả câu"), ("spelling", "Từ nào có âm")]
+        guard text("Nghe và nhận âm").waitForExistence(timeout: 60) else {
+            shot("\(prefix)-missing")
+            XCTFail("\(context): listening step missing")
+            return
+        }
+        let check = button("Kiểm tra")
         var seen = Set<String>()
-        for _ in 0..<12 where text("Nghe và nhận âm").exists {
-            let options = buttons(where: "identifier BEGINSWITH 'option.'")
+        var retryShot = false
+        for _ in 0..<30 where text("Nghe và nhận âm").exists && !button("Tiếp tục").exists {
             // The first question may still be coming from a language model.
-            guard options.firstMatch.waitForExistence(timeout: seen.isEmpty ? 180 : 5) else { break }
-            XCTAssertFalse(button("Có").exists || button("Không").exists, "yes/no question still shown")
-            let kind = kinds.first { k in
-                app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", k.1)).firstMatch.exists
-            }?.0 ?? "other"
+            guard check.waitForExistence(timeout: seen.isEmpty ? 180 : 5) else { break }
+            XCTAssertFalse(buttons(where: "identifier BEGINSWITH 'option.'").firstMatch.exists, "a pick-one-of-two question is still shown")
+            let kind: String
+            if button("seq.0.0").exists { kind = "sequence" }
+            else if app.textFields["dictation.field"].exists { kind = "dictation" }
+            else if button("sort.0").exists { kind = "sort" }
+            else if buttons(where: "identifier BEGINSWITH 'tile.'").firstMatch.exists { kind = "build" }
+            else { kind = "other" }
             let first = seen.insert(kind).inserted
-            if first { shot("\(prefix)-\(kind)") }
-            options.element(boundBy: options.count - 1).tap()
             if first {
-                assertPinned(button("Tiếp"), "\(context) \(kind)")
+                assertPinned(check, "\(context) \(kind)")
+                XCTAssertEqual(check.isEnabled, kind == "sort", "\(kind): Kiểm tra enabled before answering")
+                shot("\(prefix)-\(kind)")
+            }
+            if !retryShot, text("Làm lại câu sai").exists { retryShot = true; shot("\(prefix)-retry-\(kind)") }
+            switch kind {
+            case "sequence":
+                for slot in 0..<3 { button("seq.\(slot).\(slot % 2)").tapIfPresent() }
+            case "dictation":
+                let field = app.textFields["dictation.field"]
+                field.tap()
+                field.typeText("ship\n")
+            case "sort":
+                button("sort.0").tapIfPresent()
+            case "build":
+                let tile = buttons(where: "identifier BEGINSWITH 'tile.'").firstMatch
+                for _ in 0..<8 where !check.isEnabled { tile.tap() }
+            default:
+                break
+            }
+            if first, kind != "sort" { shot("\(prefix)-\(kind)-filled") }
+            guard check.isEnabled, tap(check) else { shot("\(prefix)-\(kind)-stuck"); break }
+            if first {
+                assertPinned(button("Tiếp"), "\(context) \(kind) answered")
                 shot("\(prefix)-\(kind)-answered")
             }
             guard tap(button("Tiếp")) else { break }
-            Thread.sleep(forTimeInterval: 0.6)
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        if button("Tiếp tục").waitForExistence(timeout: 5) {
+            assertPinned(button("Tiếp tục"), "\(context) summary")
+            scrollShots("\(prefix)-summary", pages: 2)
+            scrollToTop()
+            tap(button("Tiếp tục"))
+        } else {
+            shot("\(prefix)-summary-missing")
+            XCTFail("\(context): listening summary missing, kinds seen: \(seen.sorted())")
+        }
+    }
+
+    /// Recall drills of the vocabulary programme and review: pick the meaning, or type the word. The test does not
+    /// know the words, so a first try is a guess; the answer it is then shown is used when the drill comes back,
+    /// so both the wrong and the right states are seen.
+    func answerDrills(_ prefix: String, until done: XCUIElement, limit: Int = 60, studied: [String: String] = [:]) {
+        var seen = Set<String>()
+        var learned = studied
+        for _ in 0..<limit where !done.exists {
+            let field = app.textFields["vocab.field"]
+            let meaning = button("meaning.0")
+            guard field.waitForExistence(timeout: 3) || meaning.exists else { break }
+            let kind = meaning.exists ? "meaning" : text("Điền từ đã học vào chỗ trống").exists ? "cloze" : "spell"
+            let prompt = "\(kind):" + app.staticTexts["drill.prompt"].firstMatch.label
+            let known = learned[prompt]
+            let tag = "\(kind)\(known == nil ? "" : "-known")"
+            let first = seen.insert(tag).inserted
+            if first {
+                assertPinned(button("Không nhớ"), "\(prefix) \(tag)")
+                shot("\(prefix)-\(tag)")
+            }
+            let choices = buttons(where: "identifier BEGINSWITH 'meaning.'")
+            if kind == "meaning" {
+                let pick = known.map { k in choices.matching(NSPredicate(format: "label == %@", k)).firstMatch } ?? choices.element(boundBy: 1)
+                pick.tap()
+                if learned[prompt] == nil {
+                    learned[prompt] = choices.matching(NSPredicate(format: "value == 'đúng'")).firstMatch.label
+                }
+            } else {
+                field.tap()
+                field.typeText(known ?? "xyz")
+                if first { shot("\(prefix)-\(tag)-typed") }
+                guard tap(button("Kiểm tra")) else { break }
+                let verdict = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Đáp án: '")).firstMatch
+                if verdict.waitForExistence(timeout: 1) {
+                    learned[prompt] = String(verdict.label.dropFirst("Đáp án: ".count))
+                }
+            }
+            if first {
+                assertPinned(button("Tiếp"), "\(prefix) \(tag) answered")
+                shot("\(prefix)-\(tag)-answered")
+            }
+            guard tap(button("Tiếp")) else { break }
+            Thread.sleep(forTimeInterval: 0.4)
         }
     }
 
@@ -934,11 +1024,8 @@ extension WalkthroughTests {
         let header = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '/' AND label ENDSWITH '/'")).firstMatch
         let symbol = header.label.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard tap(button("Mình đã hiểu")) else { return }
-        for _ in 0..<3 {
-            guard tap(button(symbol)) else { return }
-            guard tap(button("Tiếp")) else { return }
-            Thread.sleep(forTimeInterval: 0.6)
-        }
+        XCTAssertFalse(symbol.isEmpty)
+        answerRecognise("strict", context: "strict recognise")
         guard text("Tô ký hiệu").waitForExistence(timeout: 5) else { shot("strict-missing"); return }
         let message = text("Dùng ngón tay tô theo ký hiệu.")
         guard message.exists else { shot("strict-no-message"); return }
@@ -954,6 +1041,61 @@ extension WalkthroughTests {
         shot("strict-scribble")
         XCTAssertFalse(button("Tiếp tục").isEnabled, "scribbling across the box passed the tracing step")
     }
+}
+
+extension WalkthroughTests {
+    /// The vocabulary programme: a lesson written for the learner's topics, learned and recalled, then the next one.
+    func test19VocabPath() {
+        launch("19", onboarded: true)
+        tab("Khám phá")
+        let path = app.buttons["vocab.path"]
+        guard path.waitForExistence(timeout: 10) else { shot("vocab-path-missing"); return }
+        shot("vocab-home")
+        let before = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'bài đã học'")).count > 0
+            ? Int(path.label.components(separatedBy: ", ")[safe: 2] ?? "") ?? -1 : -1
+        path.tap()
+        shot("vocab-path-loading")
+        let start = button("Bắt đầu")
+        guard start.waitForExistence(timeout: 200) else { shot("vocab-path-failed"); return }
+        assertPinned(start, "vocab path intro")
+        scrollShots("vocab-path-intro", pages: 2)
+        scrollToTop()
+        tap(start)
+        if button("Không nhớ").waitForExistence(timeout: 3) { answerDrills("vocab-warmup", until: button("Từ tiếp theo")) }
+        guard button("Từ tiếp theo").waitForExistence(timeout: 5) else { shot("vocab-learn-missing"); return }
+        assertPinned(button("Từ tiếp theo"), "vocab path learn")
+        scrollShots("vocab-learn-1", pages: 2)
+        scrollToTop()
+        // What a learner reads on the cards: the meaning of every word and how every word is spelled.
+        var studied: [String: String] = [:]
+        func study() {
+            let word = app.staticTexts["card.word"].firstMatch.label, meaning = app.staticTexts["card.meaning"].firstMatch.label
+            studied["meaning:" + word] = meaning
+            studied["spell:" + meaning] = word
+        }
+        for i in 0..<8 where button("Từ tiếp theo").exists {
+            study()
+            button("Từ tiếp theo").tap()
+            if i == 0 { shot("vocab-learn-2") }
+        }
+        study()
+        guard tap(button("Bắt đầu nhớ lại")) else { return }
+        answerDrills("vocab-recall", until: button("Hoàn thành"), limit: 60, studied: studied)
+        guard button("Hoàn thành").waitForExistence(timeout: 5) else { shot("vocab-done-missing"); return }
+        assertPinned(button("Hoàn thành"), "vocab path done")
+        scrollShots("vocab-done", pages: 2)
+        scrollToTop()
+        tap(button("Hoàn thành"))
+        Thread.sleep(forTimeInterval: 1)
+        shot("vocab-home-after")
+        let after = Int(path.label.components(separatedBy: ", ")[safe: 2] ?? "") ?? -2
+        XCTAssertEqual(after, before + 1, "finished lessons go up by one: \(path.label)")
+        XCTAssertTrue(path.label.contains("Bài \(after + 1) ·"), "programme moves to the next lesson: \(path.label)")
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
 
 private extension XCUIElement {

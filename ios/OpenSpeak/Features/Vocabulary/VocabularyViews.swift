@@ -15,14 +15,19 @@ struct VocabularyHomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 searchBar
+                VocabPathCard()
                 let due = progress.dueWords()
                 if !due.isEmpty {
                     TaskLink { WordReviewView(words: due) } label: {
                         HStack(spacing: 14) {
                             IconBadge(systemImage: "rectangle.on.rectangle.angled", color: Theme.accent)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Ôn \(due.count) từ đến hạn").font(.headline).foregroundStyle(Theme.ink)
-                                Text("Thẻ ghi nhớ lặp lại ngắt quãng").font(.subheadline).foregroundStyle(.secondary)
+                                let session = min(due.count, WordReviewView.sessionSize)
+                                Text("Ôn \(session) từ đến hạn").font(.headline).foregroundStyle(Theme.ink)
+                                Text(due.count > session
+                                     ? "Còn \(due.count - session) từ cho lượt sau. Gõ lại từ theo nghĩa hoặc vào câu, app tự chấm"
+                                     : "Gõ lại từ theo nghĩa hoặc vào câu, app tự chấm")
+                                    .font(.subheadline).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
@@ -30,9 +35,10 @@ struct VocabularyHomeView: View {
                         .card()
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("vocab.review")
                 }
 
-                SectionTitle(text: "Chủ đề của bạn")
+                SectionTitle(text: "Tra nhanh theo chủ đề")
                 topicGrid(content.topics.filter { chosen.isEmpty || chosen.contains($0.id) })
                 let others = content.topics.filter { !chosen.isEmpty && !chosen.contains($0.id) }
                 if !others.isEmpty {
@@ -131,7 +137,8 @@ final class VocabLessonModel {
     }
 }
 
-/// New words for a topic, one card at a time: meaning, sound, example, then say it.
+/// New words for a topic, one card at a time: meaning, sound, example, then say it. Afterwards every word is
+/// recalled three ways and the app grades it.
 struct VocabLessonView: View {
     let topic: Topic
 
@@ -139,6 +146,8 @@ struct VocabLessonView: View {
     @AppStorage(Prefs.level) private var level = "beginner"
     @State private var model = VocabLessonModel()
     @State private var index = 0
+    @State private var wrong: Set<String> = []
+    @State private var graded = false
     @State private var practising: PracticeItem?
 
     var body: some View {
@@ -151,16 +160,16 @@ struct VocabLessonView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                VStack(spacing: 14) {
+                LessonStepLayout {
                     Label(message, systemImage: "wifi.exclamationmark").foregroundStyle(Theme.bad)
-                    Button("Thử lại") { Task { await load() } }.buttonStyle(SecondaryButtonStyle())
+                } actions: {
+                    Button("Thử lại") { Task { await load() } }.buttonStyle(PrimaryButtonStyle())
                 }
-                .padding(20)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .cards(let lesson):
                 cards(lesson)
             }
         }
+        .environment(\.lessonStepTitle, stepTitle)
         .screenBackground()
         .inlineNavigationTitle(topic.title)
         .task { if case .loading = model.phase { await load() } }
@@ -169,15 +178,23 @@ struct VocabLessonView: View {
         }
     }
 
+    private var stepTitle: String {
+        guard case .cards(let lesson) = model.phase else { return "" }
+        return index < lesson.words.count ? "Làm quen từ mới" : "Nhớ lại từ mới"
+    }
+
     private func load() async {
         index = 0
+        graded = false
+        wrong = []
         await model.load(topic: topic, level: level, known: progress.knownWordList)
+        if case .cards(let lesson) = model.phase { WordAudioCache.prefetch(lesson.words.map(\.word)) }
     }
 
     @ViewBuilder
     private func cards(_ lesson: VocabLesson) -> some View {
         if let word = lesson.words[safe: index] {
-            VStack(spacing: 16) {
+            LessonStepLayout {
                 HStack {
                     Text("\(index + 1)/\(lesson.words.count)").font(.subheadline.bold())
                     ProgressView(value: Double(index + 1), total: Double(lesson.words.count)).tint(Theme.primary)
@@ -185,38 +202,28 @@ struct VocabLessonView: View {
                         Text("Gói có sẵn").font(.caption2).foregroundStyle(.secondary)
                     }
                 }
-                ScrollView {
-                    WordCard(word: word, saved: progress.isSaved(word),
-                             toggleSave: { progress.save(word) },
-                             speak: { practising = $0 })
+                WordCard(word: word, saved: progress.isSaved(word),
+                         toggleSave: { progress.save(word) },
+                         speak: { practising = $0 })
+                    .id(word.id)
+            } actions: {
+                Button(index + 1 < lesson.words.count ? "Từ tiếp theo" : "Bắt đầu nhớ lại") {
+                    withAnimation { index += 1 }
                 }
-                HStack(spacing: 12) {
-                    Button("Đã biết") {
-                        progress.gradeWord(word, remembered: true)
-                        withAnimation { index += 1 }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                    Button("Học từ này") {
-                        progress.gradeWord(word, remembered: false)
-                        withAnimation { index += 1 }
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-                }
+                .buttonStyle(PrimaryButtonStyle())
             }
-            .padding(20)
+            .onAppear { SpeechPlayer.shared.speak(word.word) }
+        } else if !graded {
+            DrillRunner(drills: VocabDrill.practice(lesson.words), title: "Nhớ lại") { drill, right in
+                if !right { wrong.insert(drill.word.id) }
+            } finished: {
+                for word in lesson.words { progress.gradeWord(word, remembered: !wrong.contains(word.id)) }
+                graded = true
+            }
         } else {
-            VStack(spacing: 18) {
-                Spacer()
-                Image(systemName: "checkmark.seal.fill").font(.system(size: 80)).foregroundStyle(Theme.good)
-                Text("Xong \(lesson.words.count) từ chủ đề \(lesson.title)").font(.title2.bold()).multilineTextAlignment(.center)
-                Text("Các từ đã vào sổ từ và sẽ được nhắc ôn.").foregroundStyle(.secondary).multilineTextAlignment(.center)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
-            .padding(20)
-            .scrollingWhenNeeded()
-            .actionBar {
-                Button("Học thêm từ mới") { Task { await load() } }.buttonStyle(PrimaryButtonStyle())
+            let remembered = lesson.words.count - wrong.count
+            QuizSummaryView(score: remembered, total: lesson.words.count, actionTitle: "Học thêm từ mới") {
+                Task { await load() }
             }
         }
     }
@@ -236,6 +243,7 @@ struct WordCard: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(word.word).font(.largeTitle.bold()).foregroundStyle(Theme.ink)
+                        .accessibilityIdentifier("card.word")
                     HStack(spacing: 8) {
                         Text("/\(word.ipa)/").font(.system(.title3, design: .serif)).foregroundStyle(Theme.primary)
                         Text(word.pos).font(.caption.italic()).foregroundStyle(.secondary)
@@ -274,6 +282,7 @@ struct WordCard: View {
             }
             Divider()
             Text(word.meaningVi).font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
+                .accessibilityIdentifier("card.meaning")
             VStack(alignment: .leading, spacing: 6) {
                 Text(word.exampleEn).font(.body.italic())
                 Text(word.exampleVi).font(.subheadline).foregroundStyle(.secondary)
@@ -303,7 +312,7 @@ struct WordCard: View {
     private func loadRecording() async {
         credit = WordAudioCache.credit(for: word.word)
         guard credit == nil, let key = WordAudioCache.key(word.word), !WordAudioCache.isMissing(key) else { return }
-        if await WordAudioCache.fetch(key) { credit = WordAudioCache.credit(for: word.word) }
+        if case .cached = await WordAudioCache.fetch(key) { credit = WordAudioCache.credit(for: word.word) }
     }
 
     private var cambridgeURL: URL {
@@ -311,77 +320,40 @@ struct WordCard: View {
     }
 }
 
-/// Flashcards for words that are due: recall the meaning, flip, grade yourself.
+/// Words that are due, each recalled by typing it (from its meaning or into a new sentence); the app grades it.
 struct WordReviewView: View {
+    /// Words per sitting, so a backlog is worked through over several short sessions.
+    static let sessionSize = 15
+
     let words: [VocabWord]
+
+    init(words: [VocabWord]) {
+        self.words = Array(words.prefix(Self.sessionSize))
+    }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(ProgressStore.self) private var progress
-    @State private var index = 0
-    @State private var flipped = false
     @State private var remembered = 0
+    @State private var finished = false
 
     var body: some View {
         Group {
-            if let word = words[safe: index] {
-                card(word)
-                    .padding(20)
-                    .scrollingWhenNeeded()
-                    .actionBar {
-                        if flipped {
-                            HStack(spacing: 12) {
-                                Button("Quên rồi") { grade(word, false) }.buttonStyle(PrimaryButtonStyle(color: Theme.bad))
-                                Button("Nhớ") { grade(word, true) }.buttonStyle(PrimaryButtonStyle(color: Theme.good))
-                            }
-                        } else {
-                            Button("Xem nghĩa") { flip(word) }.buttonStyle(PrimaryButtonStyle())
-                        }
-                    }
-            } else {
+            if finished {
                 QuizSummaryView(score: remembered, total: words.count, actionTitle: "Xong") { dismiss() }
+            } else {
+                DrillRunner(drills: words.map(VocabDrill.review), title: "Ôn từ") { drill, right in
+                    progress.gradeWord(drill.word, remembered: right)
+                    if right { remembered += 1 }
+                } finished: {
+                    finished = true
+                }
             }
         }
+        .environment(\.lessonStepTitle, "Ôn từ đến hạn")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .screenBackground()
         .inlineNavigationTitle("Ôn từ vựng")
-    }
-
-    private func flip(_ word: VocabWord) {
-        withAnimation(.spring) { flipped.toggle() }
-        if !flipped { SpeechPlayer.shared.speak(word.word) }
-    }
-
-    private func card(_ word: VocabWord) -> some View {
-        VStack(spacing: 20) {
-            QuizHeader(index: index, total: words.count, score: remembered)
-            Spacer()
-            Button { flip(word) } label: {
-                VStack(spacing: 12) {
-                    Text(word.word).font(.largeTitle.bold()).foregroundStyle(Theme.ink)
-                    Text("/\(word.ipa)/").font(.system(.title3, design: .serif)).foregroundStyle(Theme.primary)
-                    if flipped {
-                        Divider()
-                        Text(word.meaningVi).font(.title3.weight(.semibold))
-                        Text(word.exampleEn).font(.subheadline.italic()).foregroundStyle(.secondary)
-                    } else {
-                        Text("Chạm để xem nghĩa").font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 260)
-                .card(padding: 24)
-            }
-            .buttonStyle(.plain)
-            .onAppear { SpeechPlayer.shared.speak(word.word) }
-            Spacer()
-        }
-    }
-
-    private func grade(_ word: VocabWord, _ ok: Bool) {
-        progress.gradeWord(word, remembered: ok)
-        if ok { remembered += 1 }
-        flipped = false
-        index += 1
+        .onAppear { WordAudioCache.prefetch(words.map(\.word)) }
     }
 }
 

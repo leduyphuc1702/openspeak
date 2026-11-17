@@ -86,7 +86,7 @@ PROMPT = (
     "của từng chủ đề. Mỗi câu ghi 'sound' là id âm được kiểm tra. "
     "'words': 8 từ đơn để người học nói, mỗi từ chứa âm của nó (nếu là nguyên âm thì ở âm tiết có trọng âm); "
     "'sentences': 4 câu tự nhiên để đọc, không tên riêng, không chữ số. "
-    "Câu hỏi trắc nghiệm theo quy tắc sau. " + exercises.RULES_VI +
+    "Câu hỏi nghe và chính tả theo quy tắc sau. " + exercises.RULES_VI +
     " Soạn 1 'pairs' cho mỗi âm, 3 'gaps', 3 'spelling'. "
     "'title_vi' là tên ngắn cho bài kiểm tra, ghi âm bằng ký hiệu IPA (/θ/), không ghi id âm (TH). "
     'Trả về JSON: {"title_vi": "...", '
@@ -94,7 +94,7 @@ PROMPT = (
     '"sentences": [{"sound": "R", "text": "...", "meaning_vi": "...", "topic": "..."}], '
     '"pairs": [{"sound": "R", "a": "...", "b": "...", "topic": "..."}], '
     '"gaps": [{"sound": "R", "sentence": "...", "target": "...", "distractor": "...", "meaning_vi": "...", "topic": "..."}], '
-    '"spelling": [{"sound": "R", "words": ["...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
+    '"spelling": [{"sound": "R", "words": ["...", "...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
 )
 
 
@@ -241,7 +241,14 @@ def next_exam(client: Optional[LLMClient], lexicon: Lexicon, req: ExamRequest) -
     top_up(pool, by_need, topics, difficulty, checker, found, rng, contrasts)
 
     pairs = balanced(found["pairs"], len(sounds), topics)
-    listening = exercises.interleave(pairs, balanced(found["spelling"], 3, topics), balanced(found["gaps"], 3, topics))
+    # Transcriptions to build from the exam's own words, one sound each, weakest sounds first.
+    builder = exercises.Checker(lexicon, sounds, rng)
+    builds = []
+    for sound in by_need:
+        candidates = [w["word"] for w in found["words"] if w["sound"] == sound]
+        builds += exercises.builds_from(builder, candidates, sound, 1, contrasts.get(sound))
+    listening = exercises.interleave(pairs, balanced(found["spelling"], 3, topics), builds[:2],
+                                     balanced(found["gaps"], 3, topics))
     everything = found["words"] + found["sentences"] + listening
     covered = Counter(i["topic"] for i in everything if i.get("topic"))
     after = req.history[-1].index if req.history else 0

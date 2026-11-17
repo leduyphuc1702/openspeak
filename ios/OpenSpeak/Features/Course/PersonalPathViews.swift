@@ -276,7 +276,7 @@ struct PathLessonView: View {
             progress.startPathLesson(lesson)
             if questions.isEmpty {
                 questions = lesson.exercises
-                    ?? lesson.pairs.map { Exercise.pair($0.a.entry, $0.b.entry, sound: lesson.focus) }
+                    ?? lesson.pairs.map { Exercise.sequence($0.a.entry, $0.b.entry, sound: lesson.focus) }
             }
         }
     }

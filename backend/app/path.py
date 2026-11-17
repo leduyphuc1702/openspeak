@@ -320,15 +320,19 @@ def rules_lesson(pool: Pool, req: PathRequest, plan: Plan) -> Dict:
 
 def lesson_exercises(pool: Pool, lesson: Dict, rng: random.Random, found: Optional[Dict] = None,
                      used: Optional[set] = None) -> List[Dict]:
-    """The lesson's pairs as listening questions, plus spelling and gap questions (the LLM's, topped up offline)."""
+    """The lesson's pairs as sequences to mark, sort and dictation questions (the LLM's, topped up offline),
+    and transcriptions to build from the lesson's own words, which the learner says next."""
     focus = lesson["focus"]
     found = found or {}
     used = set(used or ()) | {p[k]["word"] for p in lesson["pairs"] for k in ("a", "b")}
     spelling = list(found.get("spelling", []))
     if len(spelling) < 2:
         spelling += exercises.rules_spelling(pool.lexicon, pool.words, focus, rng, 2 - len(spelling), used)
+    checker = exercises.Checker(pool.lexicon, [focus], rng)
+    checker.take(*used)
+    builds = exercises.builds_from(checker, [w["word"] for w in lesson["words"]], focus, 2, lesson.get("contrast"))
     return exercises.interleave(exercises.pairs_as_exercises(lesson["pairs"], focus, rng),
-                                spelling[:2], found.get("gaps", [])[:2])
+                                spelling[:2], builds, found.get("gaps", [])[:2])
 
 
 PATH_PROMPT = (
@@ -348,7 +352,7 @@ PATH_PROMPT = (
     '"words": [{"word": "...", "meaning_vi": "..."}], "pairs": [{"a": "...", "b": "..."}], '
     '"sentences": [{"text": "...", "meaning_vi": "..."}], '
     '"gaps": [{"sentence": "...", "target": "...", "distractor": "...", "meaning_vi": "...", "topic": "..."}], '
-    '"spelling": [{"words": ["...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
+    '"spelling": [{"words": ["...", "...", "...", "..."], "note_vi": "...", "topic": "..."}]}'
 )
 
 

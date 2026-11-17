@@ -8,11 +8,13 @@ final class ProgressStore {
     struct ReviewCard: Codable, Hashable {
         var box: Int = 0          // 0...5; higher = longer interval
         var due: Date = .now
+        var lapses: Int? = nil    // times answered wrong
 
         static let intervals: [Double] = [0, 1, 2, 4, 8, 16] // days
 
         mutating func grade(correct: Bool, now: Date = .now) {
             box = correct ? min(box + 1, Self.intervals.count - 1) : 0
+            if !correct { lapses = (lapses ?? 0) + 1 }
             due = now.addingTimeInterval(Self.intervals[box] * 86_400)
         }
     }
@@ -34,6 +36,8 @@ final class ProgressStore {
         var pathResults: [String: PathResult] = [:]     // lesson index -> result
         var pathExams: [PathExam] = []
         var examResults: [String: ExamResult] = [:]     // exam index -> result
+        var vocabLessons: [VocabPathLesson] = []
+        var vocabResults: [String: Int] = [:]           // vocabulary lesson index -> words remembered
 
         init() {}
 
@@ -57,6 +61,8 @@ final class ProgressStore {
             pathResults = (try? c.decodeIfPresent([String: PathResult].self, forKey: .pathResults)) ?? [:]
             pathExams = (try? c.decodeIfPresent([PathExam].self, forKey: .pathExams)) ?? []
             examResults = (try? c.decodeIfPresent([String: ExamResult].self, forKey: .examResults)) ?? [:]
+            vocabLessons = (try? c.decodeIfPresent([VocabPathLesson].self, forKey: .vocabLessons)) ?? []
+            vocabResults = (try? c.decodeIfPresent([String: Int].self, forKey: .vocabResults)) ?? [:]
         }
     }
 
@@ -353,11 +359,50 @@ final class ProgressStore {
 
     var knownWordList: [String] { snapshot.savedWords.values.map(\.word) }
 
+    /// Due words, the longest overdue first.
     func dueWords(now: Date = .now) -> [VocabWord] {
-        snapshot.wordCards.filter { $0.value.due <= now }.compactMap { snapshot.savedWords[$0.key] }
+        snapshot.wordCards.filter { $0.value.due <= now }.sorted { $0.value.due < $1.value.due }
+            .compactMap { snapshot.savedWords[$0.key] }
     }
 
     func isSaved(_ word: VocabWord) -> Bool { snapshot.savedWords[word.id] != nil }
+
+    /// Words answered wrong at least once and not yet remembered twice in a row since.
+    var weakWords: [String] {
+        snapshot.wordCards.filter { ($0.value.lapses ?? 0) > 0 && $0.value.box <= 1 }
+            .compactMap { snapshot.savedWords[$0.key]?.word }.sorted()
+    }
+
+    /// Words remembered at the longest intervals (a week or more).
+    var masteredWordCount: Int { snapshot.wordCards.values.filter { $0.box >= 3 }.count }
+
+    // MARK: Vocabulary programme
+
+    var currentVocabLesson: VocabPathLesson? {
+        snapshot.vocabLessons.first { snapshot.vocabResults[String($0.index)] == nil }
+    }
+
+    var finishedVocabLessons: Int { snapshot.vocabResults.count }
+
+    func vocabRequest(level: String, topics: [String]) -> VocabPathRequest {
+        VocabPathRequest(level: level, topics: topics,
+                         lessonIndex: (snapshot.vocabLessons.map(\.index).max() ?? 0) + 1,
+                         known: knownWordList, weak: weakWords)
+    }
+
+    func startVocabLesson(_ lesson: VocabPathLesson) {
+        snapshot.vocabLessons.removeAll { $0.index == lesson.index }
+        snapshot.vocabLessons.append(lesson)
+        snapshot.vocabLessons = Array(snapshot.vocabLessons.suffix(40))
+    }
+
+    /// Every word of the lesson goes into review: those answered right the first time are due tomorrow,
+    /// the others come back in the next review.
+    func finishVocabLesson(_ lesson: VocabPathLesson, remembered: [String: Bool]) {
+        for word in lesson.words { gradeWord(word, remembered: remembered[word.id] ?? false) }
+        snapshot.vocabResults[String(lesson.index)] = lesson.words.filter { remembered[$0.id] == true }.count
+        addXP(25)
+    }
 
     // MARK: Streak and daily goal
 

@@ -4,7 +4,7 @@
 
 1. **Phiên âm**: học 41 âm IPA theo lộ trình nền tảng 15 bài, mỗi âm học kỹ như trẻ mẫu giáo học chữ cái. Các bước là làm quen (sơ đồ khẩu hình và từng bước đặt môi, hàm, lưỡi), nhận mặt ký hiệu, tô ký hiệu bằng tay (phải tô kín ký hiệu, không lệch ra ngoài, đủ từng nét), nghe và nhận âm (câu hỏi do LLM ra theo chủ đề của bạn, xem phần "Câu hỏi nghe"), rồi nói. Sau đó ôn lại theo lịch lặp ngắt quãng. Song song là **lộ trình cá nhân không có điểm dừng**: mỗi bài được lập từ kết quả của chính bạn (xem phần "Lộ trình cá nhân").
 2. **Luyện nói**: AI chấm **trực tiếp từ âm thanh** từng âm vị, trọng âm, ngữ điệu, độ trôi chảy và nối âm (linking, flap t, nuốt âm...). Điểm đã hiệu chỉnh theo điểm chuyên gia (xem bên dưới). Có **khẩu hình động cho cả từ và cả câu** (xem phần "Khẩu hình động"), và chế độ **quay video miệng**: điện thoại đo môi từng khung hình, sau đó LLM thị giác xem ảnh cận miệng để chỉ cách sửa.
-3. **Từ vựng**: 24 chủ đề cho người đi làm (họp, email, thuyết trình, small talk, gọi điện, đàm phán, dự án, khách hàng, tiền bạc, nêu ý kiến, cảm xúc, đi lại, thuê nhà, khẩn cấp...). LLM giao từ và cụm từ mới theo chủ đề và trình độ. Mỗi từ có thẻ học (nghĩa, IPA, ví dụ, **giọng người thật** từ Wikimedia Commons, nói, khẩu hình), sổ từ và ôn tập. Có thêm tra từ điển.
+3. **Từ vựng**: 24 chủ đề cho người đi làm (họp, email, thuyết trình, small talk, gọi điện, đàm phán, dự án, khách hàng, tiền bạc, nêu ý kiến, cảm xúc, đi lại, thuê nhà, khẩn cấp...). Có **lộ trình từ vựng** không điểm kết thúc: mỗi bài 6 từ do LLM soạn theo chủ đề, trình độ và tình huống (luân phiên), tránh từ đã học và nhắc lại từ hay sai. Mỗi từ có thẻ học (nghĩa, IPA, ví dụ, **giọng người thật** từ Wikimedia Commons, nói, khẩu hình), rồi được nhớ lại 3 cách và app tự chấm. Ôn tập lặp lại ngắt quãng cũng bắt gõ lại từ, không tự đánh giá "nhớ/quên"; mỗi lượt ôn tối đa 15 từ, quá hạn lâu nhất trước. Có thêm tra từ điển.
 4. **Hội thoại AI**: nhập vai tình huống công sở (8 tình huống có sẵn hoặc LLM tạo theo chủ đề bạn gõ). Mỗi tình huống có 3 nhiệm vụ. Bạn nói hoặc gõ; AI đáp lại, sửa lỗi câu, gợi ý cách nói tự nhiên hơn, đánh dấu nhiệm vụ đã xong. Lượt nói được ghi thành file âm thanh; nhận dạng giọng nói trên máy chỉ lấy ra chữ, còn chính bản ghi đó được gửi tới mô hình âm vị của backend để chấm phát âm từng âm và ngữ điệu, ngay dưới bong bóng chat (xem phần "Hội thoại: chấm phát âm từng lượt").
 
 ```
@@ -66,8 +66,9 @@ LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận
 | `POST /v1/articulation-feedback` | Số đo môi theo từng âm (+ tối đa 8 ảnh JPEG cận miệng) → nhận xét khẩu hình |
 | `GET /v1/articulation/{id}` | Mô tả cấu âm và các bước tiếng Việt cho một âm |
 | `GET /v1/topics`, `POST /v1/vocab/lesson` | Chủ đề; bài từ mới do LLM giao (lọc theo từ đã học, có IPA từ CMUdict) |
+| `POST /v1/vocab/next` | Bài tiếp theo của lộ trình từ vựng (`level`, `topics`, `lesson_index`, `known`, `weak`): 6 từ, mỗi từ có câu ví dụ và một câu luyện ở tình huống khác kèm chỗ trống |
 | `GET /v1/dictionary/{word}` | Phiên âm, nghĩa (Wiktionary hoặc LLM), đường dẫn sang Cambridge |
-| `GET /v1/audio/word/{word}` | Bản ghi giọng người thật của một từ (Wikimedia Commons), trả WAV kèm header ghi công `X-Audio-Artist/License/Source/Accent` |
+| `GET /v1/audio/word/{word}` | Bản ghi giọng người thật của một từ (Wikimedia Commons), trả WAV kèm header ghi công `X-Audio-Artist/License/Source/Accent`; 404 nếu Commons không có, 503 + `Retry-After` nếu Commons đang giới hạn |
 | `GET /v1/roleplay/scenarios` | 8 tình huống hội thoại công sở có sẵn |
 | `POST /v1/roleplay/start` | Lấy tình huống có sẵn (`scenario_id`) hoặc để LLM tạo theo `topic` |
 | `POST /v1/roleplay/turn` | Một lượt hội thoại: câu đáp, lỗi đã sửa, cách nói hay hơn, nhiệm vụ đã xong, gợi ý |
@@ -91,15 +92,29 @@ Mỗi bài ghi rõ lý do chọn (ví dụ "Bài này luyện /θ/ vì điểm n
 
 ### Câu hỏi nghe
 
-Không còn câu hỏi kiểu "Từ này có âm /iː/ không?" hay "chọn âm có trong từ eat": người học trả lời được mà không cần nghe. Mọi câu hỏi trắc nghiệm (bài nền tảng, bài lộ trình, bài kiểm tra) thuộc một trong ba loại, đều do LLM ra đề rồi được backend kiểm lại trong `backend/app/exercises.py`:
+Câu hỏi chọn 1 trong 2 cũ đoán được mà không cần nghe. Đo trên 8 câu điền chỗ trống (5 do LLM ra), một LLM không nghe được audio chọn đúng 6/8 chỉ nhờ nghĩa của câu; cùng các câu đó bắt gõ từ (không có lựa chọn) thì đúng 0/8. Với câu "đọc phiên âm, chọn từ", chỉ cần đoán theo chữ cái đầu đã đúng 55% (ngẫu nhiên là 25%). Vì vậy mọi câu hỏi giờ bắt người học **đánh dấu, gõ, phân loại hoặc ghép** thay vì chọn, đều do LLM ra đề rồi được backend kiểm lại trong `backend/app/exercises.py`:
 
 | Loại | Người học làm gì | Backend kiểm |
 |---|---|---|
-| Cặp âm (`pair`) | Nghe một từ trong cặp âm tối thiểu (sit/seat), chọn từ đã nghe | Hai từ thật sự chỉ khác nhau ở âm đang học |
-| Điền chỗ trống (`gap`) | Nghe cả câu, chọn từ đã lấp chỗ trống ("The sales rep wrote a ___ answer." wrong/long). Cả hai từ đều hợp nghĩa, nên phải nghe mới chọn đúng | Hai từ là cặp âm tối thiểu, từ đáp án có trong câu, câu đủ ngắn theo độ khó |
-| Chính tả bẫy (`spelling`) | 3–4 từ viết giống nhau, chọn từ có âm đang học (teach / bread / break: chỉ teach có /iː/). Phiên âm chỉ hiện sau khi trả lời | Backend tự tính đáp án từ từ điển phát âm: đúng một từ có âm đó (ở âm tiết nhấn nếu là nguyên âm), các từ còn lại không có âm đó ở bất kỳ cách đọc nào |
+| Nghe chuỗi (`sequence`) | Nghe 3 lần đọc (giọng có thể khác nhau), đánh dấu mỗi lần là từ nào của cặp âm tối thiểu (sit/seat). Cả hai từ đều có mặt, nên không đoán theo nghĩa được | Hai từ thật sự chỉ khác nhau ở âm đang học |
+| Nghe chép (`dictation`) | Nghe cả câu, gõ từ còn thiếu. Nghe nhầm sang từ kia của cặp thì app chỉ ra khác nhau ở âm nào | Từ đáp án có trong câu, câu đủ ngắn theo độ khó; chấp nhận từ đồng âm (meet/meat) |
+| Phân loại (`sort`) | 4–5 từ viết giống nhau, chạm vào **mọi** từ có âm đang học (có thể một hoặc nhiều). Sau khi trả lời mới hiện phiên âm và quy tắc chính tả | Backend tự tính từ từ điển phát âm: có cả từ đúng lẫn sai; từ đọc được hai kiểu thì bỏ |
+| Ghép phiên âm (`build`) | Nghe một từ, ghép phiên âm từ các ô ký hiệu; ô nhiễu là âm dễ nhầm (ship: có cả /ɪ/ và /iː/) | Phiên âm lấy từ từ điển; từ tối đa 6 âm, âm đang học ở âm tiết nhấn |
 
-LLM nhận chủ đề người học đã chọn, một "góc nhìn" cho mỗi chủ đề (đổi mỗi lần, ví dụ "lỗi và sự cố", "con số và thời gian") và các từ khoá đã dùng gần đây để tránh lặp. Câu nào sai thì bị bỏ; thiếu thì bù bằng câu ghép từ kho từ của máy chủ (cặp âm và chính tả bẫy theo bảng chữ viết của từng âm). Màn câu hỏi ghi rõ đề do AI ra hay ghép tự động.
+Câu sai quay lại một lần ở cuối bước (chỉ lần đầu được tính điểm). Cuối bước có phần "Cần nhớ" (các từ đã nghe nhầm, kèm phiên âm và nút nghe) và các quy tắc chính tả đã gặp. Bước "Nhận mặt ký hiệu" đọc lẫn âm đang học với âm dễ nhầm, nên không thể luôn chọn ký hiệu trên tiêu đề; câu "đọc phiên âm" chọn từ nhiễu giống nhau về âm và chữ cái đầu.
+
+LLM nhận chủ đề người học đã chọn, một "góc nhìn" cho mỗi chủ đề (đổi mỗi lần, ví dụ "lỗi và sự cố", "con số và thời gian") và các từ khoá đã dùng gần đây để tránh lặp. Câu nào sai thì bị bỏ; thiếu thì bù bằng câu ghép từ kho từ của máy chủ. Màn câu hỏi ghi rõ đề do AI ra hay ghép tự động. App cũ gửi kiểu `pair`/`gap`/`spelling` vẫn đọc được.
+
+### Lộ trình từ vựng
+
+Ở tab Khám phá, thẻ "Lộ trình từ vựng" xin bài kế tiếp qua `POST /v1/vocab/next` (`backend/app/vocab_path.py`). Backend xoay vòng chủ đề người học chọn và chọn một tình huống (con số và thời gian, nhờ vả và xin phép...), gửi LLM danh sách từ đã học (để tránh) và từ hay sai (để lồng vào câu). Mỗi từ được kiểm bằng từ điển phát âm; câu luyện phải chứa đúng một lần từ đó (hoặc một dạng của nó) và khác câu ví dụ. Không có LLM hoặc LLM lỗi thì lấy từ gói có sẵn, ghi rõ trên màn hình.
+
+Một bài gồm:
+
+1. Khởi động: gõ lại tối đa 4 từ cũ đến hạn ôn.
+2. Làm quen 6 từ mới bằng thẻ học.
+3. Nhớ lại mỗi từ 3 cách, app chấm: nghe và chọn nghĩa (các nghĩa nhiễu là nghĩa của từ khác trong bài), nghe và gõ từ theo nghĩa, gõ từ vào câu ở tình huống mới. Từ sai quay lại cuối bài.
+4. Tổng kết: từ cần ôn sớm và từ đã nhớ. Kết quả đi vào lịch ôn lặp lại ngắt quãng; từ sai được gửi lên ở bài sau như từ yếu.
 
 ### Bài kiểm tra trong lộ trình cá nhân
 
@@ -372,7 +387,7 @@ App đi theo **luồng trải nghiệm** của các app luyện phát âm: onboa
 
 - Biểu tượng: SF Symbols, được phép dùng trong app iOS.
 - Sơ đồ khẩu hình (mặt cắt khoang miệng và môi nhìn thẳng): vẽ bằng code từ bảng cấu âm, không dùng ảnh.
-- Âm mẫu cho từ đơn: **giọng người thật từ Wikimedia Commons**, ưu tiên bộ `En-us-<từ>.ogg` (giọng Mỹ), nếu không có thì Lingua Libre (giọng không xác định vùng). Backend tải một lần, giải mã sang WAV, lưu trong `backend/cache/` và app lưu trong Caches. Thẻ từ hiện tên người ghi âm, giấy phép (thường là CC BY-SA) và đường dẫn tới file gốc. Đo trên 96 trong 144 từ có sẵn: 77 có giọng Mỹ, 18 chỉ có Lingua Libre, 1 không có. Cụm từ, câu và từ không có bản ghi dùng giọng đọc của iOS. Commons giới hạn tốc độ tải (lỗi 429 nếu tải dồn dập), đủ cho một người dùng nhưng không nên tải trước hàng loạt.
+- Âm mẫu cho từ đơn: **giọng người thật từ Wikimedia Commons**, ưu tiên bộ `En-us-<từ>.ogg` (giọng Mỹ), nếu không có thì Lingua Libre (giọng không xác định vùng). Backend tải một lần, giải mã sang WAV, lưu trong `backend/cache/` và app lưu trong Caches. Thẻ từ hiện tên người ghi âm, giấy phép (thường là CC BY-SA) và đường dẫn tới file gốc. Đo trên 96 trong 144 từ có sẵn: 77 có giọng Mỹ, 18 chỉ có Lingua Libre, 1 không có. Cụm từ, câu và từ không có bản ghi dùng giọng đọc của iOS. Backend gửi User-Agent có tên app và địa chỉ liên hệ theo chính sách của Wikimedia. Trước đây User-Agent mặc định bị trả 429 và backend chờ rồi thử lại, nên app đợi tới hàng chục giây mới phát được một từ. Giờ gặp 429 thì backend trả 503 ngay và tạm ngừng hỏi Commons trong thời gian `Retry-After`. App luôn phát ngay (bản ghi nếu đã có, không thì giọng iOS) và tải trước bản ghi của các từ trong bài ở nền. Đo trên VPS: lần đầu 0,4–2 giây mỗi từ, đã lưu thì khoảng 10 ms.
 - Âm IPA đơn lẻ: giọng đọc của iOS. Muốn có âm IPA đơn lẻ chuẩn hơn, đặt file `phoneme_<ID>.m4a` (ví dụ `phoneme_TH.m4a`) vào `ios/OpenSpeak/Resources/` và app sẽ ưu tiên dùng file này. Bộ audio IPA trên Wikimedia Commons phần lớn là CC BY-SA hoặc public domain; cần kiểm tra giấy phép và ghi công từng file.
 - Dữ liệu và mô hình:
   - CMUdict: giấy phép kiểu BSD.

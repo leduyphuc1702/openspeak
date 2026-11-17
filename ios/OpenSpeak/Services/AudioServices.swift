@@ -49,27 +49,68 @@ enum WordAudioCache {
         return try? JSONDecoder().decode(WordAudioCredit.self, from: data)
     }
 
-    /// Downloads the recording; true when one is now cached. Network errors are not remembered.
-    static func fetch(_ key: String) async -> Bool {
-        guard let client = try? APIClient.current() else { return false }
+    enum Fetched { case cached, missing, failed(retryAfter: TimeInterval?) }
+
+    /// Downloads the recording. Only "Commons has none" is remembered on disk.
+    static func fetch(_ key: String) async -> Fetched {
+        guard let client = try? APIClient.current() else { return .failed(retryAfter: nil) }
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             guard let found = try await client.wordAudio(key) else {
                 try Data().write(to: missURL(key))
-                return false
+                return .missing
             }
             try found.data.write(to: audioURL(key))
             try JSONEncoder().encode(found.credit).write(to: creditURL(key))
-            return true
+            return .cached
+        } catch APIError.busy(let retryAfter) {
+            return .failed(retryAfter: retryAfter)
         } catch {
-            return false
+            return .failed(retryAfter: nil)
         }
+    }
+
+    /// Fetches recordings in the background, one at a time, so they are ready before the learner taps.
+    static func prefetch(_ words: [String]) {
+        Task { await WordAudioPrefetcher.shared.add(words.compactMap(key)) }
     }
 }
 
-/// Plays model pronunciations. Single words use a real person's recording from Wikimedia Commons
-/// when the backend can find one; bundled `phoneme_<ID>.(m4a|mp3|wav)` files take priority for
-/// isolated sounds; everything else falls back to on-device TTS.
+/// Background downloads of word recordings. Playback never waits for them.
+actor WordAudioPrefetcher {
+    static let shared = WordAudioPrefetcher()
+    private var queue: [String] = []
+    private var running = false
+    private var retryAt: [String: Date] = [:]
+    private var pausedUntil = Date.distantPast
+
+    func add(_ keys: [String]) {
+        let now = Date()
+        for key in keys where !queue.contains(key) && !WordAudioCache.has(key) && !WordAudioCache.isMissing(key)
+            && (retryAt[key] ?? .distantPast) <= now {
+            queue.append(key)
+        }
+        guard !running, !queue.isEmpty, now >= pausedUntil else { return }
+        running = true
+        Task { await drain() }
+    }
+
+    private func drain() async {
+        while !queue.isEmpty, Date() >= pausedUntil {
+            let key = queue.removeFirst()
+            if case .failed(let retryAfter) = await WordAudioCache.fetch(key) {
+                retryAt[key] = Date().addingTimeInterval(120)
+                if let retryAfter { pausedUntil = Date().addingTimeInterval(retryAfter) }
+            }
+        }
+        if Date() < pausedUntil { queue.removeAll() }
+        running = false
+    }
+}
+
+/// Plays model pronunciations at once. A single word uses a real person's recording from Wikimedia
+/// Commons if one is already downloaded, otherwise the on-device voice while the recording downloads
+/// for next time; bundled `phoneme_<ID>.(m4a|mp3|wav)` files take priority for isolated sounds.
 @MainActor
 final class SpeechPlayer {
     static let shared = SpeechPlayer()
@@ -77,26 +118,26 @@ final class SpeechPlayer {
     private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private let voice = AVSpeechSynthesisVoice(language: "en-US")
-    private var pending: UUID?
+    /// Every installed US English voice, for listening drills that should not hinge on one speaker.
+    private lazy var voices: [AVSpeechSynthesisVoice] = {
+        let all = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+        return all.isEmpty ? [voice].compactMap { $0 } : all
+    }()
 
-    func speak(_ text: String, slow: Bool = false) {
+    /// `varied` picks a random speaker (the recording or any US voice), as in high-variability
+    /// perception training, so the learner learns the sound rather than one voice's version of it.
+    func speak(_ text: String, slow: Bool = false, varied: Bool = false) {
         stop()
-        guard let key = WordAudioCache.key(text) else { return tts(text, slow: slow) }
-        if WordAudioCache.has(key), playRecording(key, slow: slow) { return }
-        if WordAudioCache.isMissing(key) { return tts(text, slow: slow) }
-        let token = UUID()
-        pending = token
-        Task {
-            let ok = await WordAudioCache.fetch(key)
-            guard pending == token else { return }
-            pending = nil
-            if !(ok && playRecording(key, slow: slow)) { tts(text, slow: slow) }
-        }
+        guard let key = WordAudioCache.key(text) else { return tts(text, slow: slow, varied: varied) }
+        let human = WordAudioCache.has(key)
+        if human, !varied || Int.random(in: 0...voices.count) == 0, playRecording(key, slow: slow) { return }
+        tts(text, slow: slow, varied: varied)
+        if !human { WordAudioCache.prefetch([key]) }
     }
 
-    private func tts(_ text: String, slow: Bool) {
+    private func tts(_ text: String, slow: Bool, varied: Bool = false) {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice
+        utterance.voice = varied ? voices.randomElement() : voice
         utterance.rate = slow ? 0.32 : 0.45
         synthesizer.speak(utterance)
     }
@@ -138,7 +179,6 @@ final class SpeechPlayer {
     }
 
     func stop() {
-        pending = nil
         synthesizer.stopSpeaking(at: .immediate)
         player?.stop()
     }

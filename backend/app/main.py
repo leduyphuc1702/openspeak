@@ -16,14 +16,14 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import articulation, connected_speech, exam, exercises, path, roleplay, vocab
+from . import articulation, connected_speech, exam, exercises, path, roleplay, vocab, vocab_path
 from .audio import load_audio
 from .dictionary import OpenDictionary, define
 from .feedback import pronunciation_feedback
 from .llm import HEADER_BASE_URL, HEADER_MODEL, Image, LLMClient, LLMConfigError, client_from_env, client_from_headers
 from .phonetics import PHONE_IPA, Lexicon, UnknownWordError, expected_intonation, tokenize
 from .scoring import Assessor, NoSpeechError
-from .word_audio import WordAudio
+from .word_audio import Throttled, WordAudio
 
 log = logging.getLogger("openspeak")
 app = FastAPI(title="OpenSpeak pronunciation API", version="0.2.0")
@@ -309,6 +309,12 @@ async def vocab_lesson(req: LessonRequest):
                 "words": vocab.seed_lesson(get_lexicon(), req.topic)}
 
 
+@app.post("/v1/vocab/next")
+async def vocab_next(req: vocab_path.VocabPathRequest):
+    """The next lesson of the vocabulary programme, for the learner's topics, level and known words."""
+    return await run_in_threadpool(vocab_path.next_lesson, get_llm(), get_lexicon(), req)
+
+
 # --- Personal path ---
 
 @app.post("/v1/path/next")
@@ -405,6 +411,10 @@ async def word_audio(word: str):
         found = await run_in_threadpool(get_word_audio().get, word)
     except ValueError as e:
         raise HTTPException(422, {"code": "bad_word", "message": str(e)})
+    except Throttled as e:
+        log.warning("word audio: %s", e)
+        raise HTTPException(503, {"code": "commons_busy", "message": "Wikimedia Commons đang giới hạn lượt tải."},
+                            headers={"Retry-After": str(int(e.retry_after) + 1)})
     except Exception:
         log.exception("word audio lookup failed")
         raise HTTPException(502, {"code": "commons_failed", "message": "Không lấy được audio từ Wikimedia Commons."})

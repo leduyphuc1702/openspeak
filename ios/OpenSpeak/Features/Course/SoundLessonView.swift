@@ -134,7 +134,7 @@ struct SoundLessonView: View {
     /// Offline fallback: the bundled minimal pairs for this sound.
     private var localPairs: [Exercise] {
         content.minimalPairs.filter { $0.contrast.contains(phoneme.id) }.shuffled().prefix(4)
-            .map { Exercise.pair($0.a, $0.b, sound: phoneme.id) }
+            .map { Exercise.sequence($0.a, $0.b, sound: phoneme.id) }
     }
 }
 
@@ -223,23 +223,31 @@ private struct MeetStep: View {
     }
 }
 
-/// Hear the sound, tap its symbol. Three correct answers in a row.
+/// Hear a sound, tap its symbol. The sound read out changes between the lesson's sound and the sounds it is
+/// confused with, so tapping the symbol in the header is not the answer; only a right first tap counts.
 private struct RecogniseStep: View {
     let phoneme: Phoneme
     let options: [Phoneme]
     let next: () -> Void
 
-    private let rounds = 3
+    private let rounds = 4
     @State private var correct = 0
+    @State private var plan: [Phoneme] = []
+    @State private var round = 0
     @State private var shuffled: [Phoneme] = []
     @State private var wrong: Phoneme?
+    @State private var missed = false
     @State private var showRight = false
+
+    private var target: Phoneme { plan[safe: round] ?? phoneme }
 
     var body: some View {
         LessonStepLayout(showsActions: showRight) {
-            Text("Nghe rồi chạm vào ký hiệu đúng (\(correct)/\(rounds))")
+            Text("Nghe rồi chạm vào ký hiệu của âm vừa đọc (đúng ngay \(correct)/\(rounds))")
                 .font(.headline)
-            Button { SpeechPlayer.shared.speak(phoneme: phoneme) } label: {
+            Text("Âm được đọc có thể là /\(phoneme.symbol)/ hoặc một âm dễ nhầm với nó.")
+                .font(.subheadline).foregroundStyle(.secondary)
+            Button { SpeechPlayer.shared.speak(phoneme: target) } label: {
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 40))
                     .frame(width: 110, height: 110)
@@ -247,6 +255,7 @@ private struct RecogniseStep: View {
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Nghe lại")
 
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
                 ForEach(shuffled) { option in
@@ -258,218 +267,72 @@ private struct RecogniseStep: View {
                             .background(tileColor(option), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .stroke(borderColor(option), lineWidth: 3))
-                            .answerMark(showRight && option == phoneme ? .right : option == wrong ? .wrong : nil)
+                            .answerMark(showRight && option == target ? .right : option == wrong ? .wrong : nil)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("symbol.\(option.id)")
                 }
             }
             if let wrong {
-                Text("Đó là /\(wrong.symbol)/. Nghe lại và thử lần nữa nhé.")
+                Text("Đó là /\(wrong.symbol)/. Nghe lại và thử lần nữa nhé (lượt này không tính).")
                     .font(.subheadline).foregroundStyle(Theme.bad)
             }
         } actions: {
-            Label("Chính xác: /\(phoneme.symbol)/", systemImage: "checkmark.circle.fill")
-                .font(.headline).foregroundStyle(Theme.good)
+            Label(missed ? "Đáp án: /\(target.symbol)/ · chưa tính lượt này" : "Chính xác: /\(target.symbol)/",
+                  systemImage: missed ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill")
+                .font(.headline).foregroundStyle(missed ? Theme.ok : Theme.good)
             Button("Tiếp") {
-                correct += 1
+                if !missed { correct += 1 }
                 if correct >= rounds { next() } else { newRound() }
             }
-            .buttonStyle(PrimaryButtonStyle(color: Theme.good))
+            .buttonStyle(PrimaryButtonStyle(color: missed ? Theme.primary : Theme.good))
         }
-        .onAppear(perform: newRound)
+        .onAppear {
+            guard plan.isEmpty else { return }
+            round = -1
+            newRound()
+        }
     }
 
     private func tileColor(_ option: Phoneme) -> Color {
-        if showRight && option == phoneme { return Theme.good.opacity(0.2) }
+        if showRight && option == target { return Theme.good.opacity(0.2) }
         if option == wrong { return Theme.bad.opacity(0.15) }
         return Theme.surface
     }
 
     private func borderColor(_ option: Phoneme) -> Color {
-        if showRight && option == phoneme { return Theme.good }
+        if showRight && option == target { return Theme.good }
         if option == wrong { return Theme.bad }
         return Theme.subtle
     }
 
     private func pick(_ option: Phoneme) {
         guard !showRight else { return }
-        if option == phoneme {
+        if option == target {
             showRight = true
             wrong = nil
-            Haptics.result(success: true)
+            Haptics.result(success: !missed)
         } else {
             wrong = option
+            missed = true
             Haptics.result(success: false)
             SpeechPlayer.shared.speak(phoneme: option)
         }
     }
 
+    /// Half the rounds read the lesson's sound, the rest one of the confusable ones, in random order.
     private func newRound() {
+        round += 1
+        if round >= plan.count {
+            let others = options.filter { $0 != phoneme }
+            plan = (Array(repeating: phoneme, count: 2) + others.shuffled().prefix(2)).shuffled()
+            round = 0
+        }
         shuffled = options.shuffled()
         wrong = nil
+        missed = false
         showRight = false
-        SpeechPlayer.shared.speak(phoneme: phoneme)
-    }
-}
-
-/// Multiple-choice questions about sounds: hear a word or a sentence and pick what was said, or spot
-/// the one word whose letters spell the sound.
-struct ListenStep: View {
-    let questions: [Exercise]
-    /// Who wrote the questions, shown above them.
-    var source: String? = nil
-    var onAnswer: ((Exercise, Bool) -> Void)? = nil
-    let next: () -> Void
-
-    @Environment(ContentStore.self) private var content
-    @State private var index = 0
-    @State private var picked: Int?
-
-    var body: some View {
-        LessonStepLayout(showsActions: picked != nil || index >= questions.count) {
-            if let question = questions[safe: index] {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Câu \(index + 1)/\(questions.count)").font(.subheadline.monospacedDigit())
-                    if let source { Text(source).font(.caption) }
-                }
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                prompt(question)
-                options(question)
-                if picked != nil { explanation(question) }
-            } else {
-                Text("Chưa có câu hỏi cho âm này.").foregroundStyle(.secondary)
-            }
-        } actions: {
-            if let picked, let question = questions[safe: index] {
-                let right = picked == question.answer
-                Label(right ? "Chính xác: \(question.correct.word) /\(question.correct.ipa)/"
-                            : "Chưa đúng. Đáp án: \(question.correct.word) /\(question.correct.ipa)/",
-                      systemImage: right ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .foregroundStyle(right ? Theme.good : Theme.bad)
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Tiếp") {
-                    self.picked = nil
-                    index += 1
-                    if index >= questions.count { next() } else { speakCurrent() }
-                }
-                .buttonStyle(PrimaryButtonStyle(color: right ? Theme.good : Theme.primary))
-            } else {
-                Button("Tiếp tục", action: next).buttonStyle(PrimaryButtonStyle())
-            }
-        }
-        .onAppear(perform: speakCurrent)
-    }
-
-    private func symbol(_ id: String) -> String { "/\(content.phoneme(id)?.symbol ?? id)/" }
-
-    @ViewBuilder
-    private func prompt(_ question: Exercise) -> some View {
-        switch question.kind {
-        case .pair:
-            speaker(question.correct.word)
-            Text("Bạn nghe thấy từ nào?").font(.headline)
-        case .gap:
-            speaker(question.sentence ?? question.correct.word)
-            Text("Nghe cả câu rồi chọn từ bạn nghe thấy ở chỗ trống").font(.headline)
-                .multilineTextAlignment(.center)
-            SwiftUI.Text(question.text ?? "")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.ink)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-                .card(padding: 16)
-        case .spelling:
-            Text("Từ nào có âm \(symbol(question.sound))?").font(.title3.bold()).foregroundStyle(Theme.ink)
-            Text("Các từ viết gần giống nhau, chỉ một từ đọc có âm này.")
-                .font(.subheadline).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private func speaker(_ text: String) -> some View {
-        Button { SpeechPlayer.shared.speak(text) } label: {
-            Image(systemName: "speaker.wave.3.fill")
-                .font(.system(size: 40))
-                .frame(width: 110, height: 110)
-                .background(Theme.primaryFill, in: Circle())
-                .foregroundStyle(.white)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Nghe lại")
-    }
-
-    @ViewBuilder
-    private func options(_ question: Exercise) -> some View {
-        // IPA under a spelling option would give the answer away, so it shows only after answering.
-        let showIPA = question.kind != .spelling || picked != nil
-        if question.kind == .spelling {
-            VStack(spacing: 12) {
-                ForEach(question.options.indices, id: \.self) { i in
-                    answerButton(question, i, subtitle: showIPA ? "/\(question.options[i].ipa)/" : nil)
-                }
-            }
-        } else {
-            HStack(spacing: 14) {
-                ForEach(question.options.indices, id: \.self) { i in
-                    answerButton(question, i, subtitle: "/\(question.options[i].ipa)/")
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func explanation(_ question: Exercise) -> some View {
-        let lines = [question.kind == .gap ? question.sentence : nil, question.meaningVi, question.noteVi].compactMap { $0 }
-        if !lines.isEmpty || question.kind == .spelling {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(lines, id: \.self) { line in
-                    Text(line).font(.subheadline).foregroundStyle(Theme.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if question.kind == .spelling {
-                    Button { SpeechPlayer.shared.speak(question.correct.word, slow: true) } label: {
-                        Label("Nghe \(question.correct.word)", systemImage: "speaker.wave.2.fill")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .card(padding: 14)
-        }
-    }
-
-    private func answerButton(_ question: Exercise, _ i: Int, subtitle: String?) -> some View {
-        let option = question.options[i]
-        let tint: Color? = picked == nil ? nil : i == question.answer ? Theme.good : picked == i ? Theme.bad : nil
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-        return Button {
-            picked = i
-            let right = i == question.answer
-            Haptics.result(success: right)
-            onAnswer?(question, right)
-        } label: {
-            VStack(spacing: 4) {
-                Text(option.word).font(.title3.bold()).foregroundStyle(Theme.ink)
-                if let subtitle {
-                    Text(subtitle).font(.system(.subheadline, design: .serif)).foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: question.kind == .spelling ? 64 : 84)
-            .background(tint?.opacity(0.15) ?? Theme.surface, in: shape)
-            .overlay(shape.stroke(tint ?? Theme.subtle, lineWidth: 2))
-            .answerMark(picked == nil ? nil : i == question.answer ? .right : picked == i ? .wrong : nil)
-        }
-        .buttonStyle(FlatButtonStyle())
-        .disabled(picked != nil)
-        .accessibilityIdentifier("option.\(option.word)")
-    }
-
-    private func speakCurrent() {
-        guard let text = questions[safe: index]?.spoken else { return }
-        SpeechPlayer.shared.speak(text)
+        SpeechPlayer.shared.speak(phoneme: target)
     }
 }
 

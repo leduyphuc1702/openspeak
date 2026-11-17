@@ -73,3 +73,33 @@ def test_endpoint_returns_wav_with_attribution(tmp_path, monkeypatch):
     assert urllib.parse.unquote(r.headers["x-audio-artist"]) == "Ví dụ"
     assert c.get("/v1/audio/word/postpone").status_code == 404
     assert c.get("/v1/audio/word/two words").status_code == 422
+
+
+def test_rate_limit_fails_fast_and_pauses_lookups(tmp_path, monkeypatch):
+    """upload.wikimedia.org answered 429 with Retry-After: 120; the app must not wait on it."""
+    from app.word_audio import Throttled, USER_AGENT
+    assert "https://" in USER_AGENT and "(" in USER_AGENT
+    now = [100.0]
+
+    class Busy(FakeCommons):
+        def __call__(self, url):
+            if url.startswith("https://upload/"):
+                self.calls.append(url)
+                raise Throttled(120)
+            return super().__call__(url)
+
+    fake = Busy()
+    audio = WordAudio(http_get=fake, cache_dir=tmp_path, clock=lambda: now[0])
+    import pytest
+    with pytest.raises(Throttled):
+        audio.get("schedule")
+    calls = len(fake.calls)
+    with pytest.raises(Throttled):
+        audio.get("deadline")
+    assert len(fake.calls) == calls, "looked up Commons again while throttled"
+    now[0] += 121
+    fake.__class__ = FakeCommons
+    assert audio.get("schedule")[1].accent == "en-US"
+    monkeypatch.setattr(main, "get_word_audio", lambda: WordAudio(http_get=Busy(), cache_dir=tmp_path / "x"))
+    r = TestClient(main.app).get("/v1/audio/word/schedule")
+    assert r.status_code == 503 and int(r.headers["retry-after"]) >= 120
