@@ -212,7 +212,7 @@ struct VocabLessonView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-            .onAppear { SpeechPlayer.shared.speak(word.word) }
+            .onAppear { SpeechPlayer.shared.speakRecording(word.word) }
         } else if !graded {
             DrillRunner(drills: VocabDrill.practice(lesson.words), title: "Nhớ lại") { drill, right in
                 if !right { wrong.insert(drill.word.id) }
@@ -257,11 +257,11 @@ struct WordCard: View {
             }
             HStack {
                 CircleToolButton(systemImage: "speaker.wave.2.fill", title: "Nghe") {
-                    SpeechPlayer.shared.speak(word.word)
+                    SpeechPlayer.shared.speakRecording(word.word)
                 }
                 Spacer()
                 CircleToolButton(systemImage: "tortoise.fill", title: "Nghe chậm") {
-                    SpeechPlayer.shared.speak(word.word, slow: true)
+                    SpeechPlayer.shared.speakRecording(word.word, slow: true)
                 }
                 Spacer()
                 CircleToolButton(systemImage: "mic.fill", title: "Nói") {
@@ -353,7 +353,6 @@ struct WordReviewView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .screenBackground()
         .inlineNavigationTitle("Ôn từ vựng")
-        .onAppear { WordAudioCache.prefetch(words.map(\.word)) }
     }
 }
 

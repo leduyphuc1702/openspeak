@@ -74,7 +74,7 @@ struct PairDrillView: View {
             QuizHeader(index: round, total: rounds, score: score)
             Spacer()
             Button {
-                SpeechPlayer.shared.speak(words[target].word, varied: true)
+                SpeechPlayer.shared.speak(words[target].word)
             } label: {
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 40))
@@ -127,7 +127,7 @@ struct PairDrillView: View {
         let word = words[target].word
         Task {
             try? await Task.sleep(for: .milliseconds(350))
-            SpeechPlayer.shared.speak(word, varied: true)
+            SpeechPlayer.shared.speak(word)
         }
     }
 

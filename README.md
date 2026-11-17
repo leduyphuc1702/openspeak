@@ -68,7 +68,7 @@ LLM **không** tự nghe audio. Phần nghe do mô hình âm học đảm nhận
 | `GET /v1/topics`, `POST /v1/vocab/lesson` | Chủ đề; bài từ mới do LLM giao (lọc theo từ đã học, có IPA từ CMUdict) |
 | `POST /v1/vocab/next` | Bài tiếp theo của lộ trình từ vựng (`level`, `topics`, `lesson_index`, `known`, `weak`): 6 từ, mỗi từ có câu ví dụ và một câu luyện ở tình huống khác kèm chỗ trống |
 | `GET /v1/dictionary/{word}` | Phiên âm, nghĩa (Wiktionary hoặc LLM), đường dẫn sang Cambridge |
-| `GET /v1/audio/word/{word}` | Bản ghi giọng người thật của một từ (Wikimedia Commons), trả WAV kèm header ghi công `X-Audio-Artist/License/Source/Accent`; 404 nếu Commons không có, 503 + `Retry-After` nếu Commons đang giới hạn |
+| `GET /v1/audio/word/{word}` | Bản ghi giọng Mỹ thật của một từ (bộ `En-us-` trên Wikimedia Commons), trả WAV kèm header ghi công `X-Audio-Artist/License/Source/Accent`; 404 nếu Commons không có, 503 + `Retry-After` nếu Commons đang giới hạn |
 | `GET /v1/roleplay/scenarios` | 8 tình huống hội thoại công sở có sẵn |
 | `POST /v1/roleplay/start` | Lấy tình huống có sẵn (`scenario_id`) hoặc để LLM tạo theo `topic` |
 | `POST /v1/roleplay/turn` | Một lượt hội thoại: câu đáp, lỗi đã sửa, cách nói hay hơn, nhiệm vụ đã xong, gợi ý |
@@ -96,7 +96,7 @@ Câu hỏi chọn 1 trong 2 cũ đoán được mà không cần nghe. Đo trên
 
 | Loại | Người học làm gì | Backend kiểm |
 |---|---|---|
-| Nghe chuỗi (`sequence`) | Nghe 3 lần đọc (giọng có thể khác nhau), đánh dấu mỗi lần là từ nào của cặp âm tối thiểu (sit/seat). Cả hai từ đều có mặt, nên không đoán theo nghĩa được | Hai từ thật sự chỉ khác nhau ở âm đang học |
+| Nghe chuỗi (`sequence`) | Nghe 3 lần đọc, đánh dấu mỗi lần là từ nào của cặp âm tối thiểu (sit/seat). Cả hai từ đều có mặt, nên không đoán theo nghĩa được | Hai từ thật sự chỉ khác nhau ở âm đang học |
 | Nghe chép (`dictation`) | Nghe cả câu, gõ từ còn thiếu. Nghe nhầm sang từ kia của cặp thì app chỉ ra khác nhau ở âm nào | Từ đáp án có trong câu, câu đủ ngắn theo độ khó; chấp nhận từ đồng âm (meet/meat) |
 | Phân loại (`sort`) | 4–5 từ viết giống nhau, chạm vào **mọi** từ có âm đang học (có thể một hoặc nhiều). Sau khi trả lời mới hiện phiên âm và quy tắc chính tả | Backend tự tính từ từ điển phát âm: có cả từ đúng lẫn sai; từ đọc được hai kiểu thì bỏ |
 | Ghép phiên âm (`build`) | Nghe một từ, ghép phiên âm từ các ô ký hiệu; ô nhiễu là âm dễ nhầm (ship: có cả /ɪ/ và /iː/) | Phiên âm lấy từ từ điển; từ tối đa 6 âm, âm đang học ở âm tiết nhấn |
@@ -387,7 +387,8 @@ App đi theo **luồng trải nghiệm** của các app luyện phát âm: onboa
 
 - Biểu tượng: SF Symbols, được phép dùng trong app iOS.
 - Sơ đồ khẩu hình (mặt cắt khoang miệng và môi nhìn thẳng): vẽ bằng code từ bảng cấu âm, không dùng ảnh.
-- Âm mẫu cho từ đơn: **giọng người thật từ Wikimedia Commons**, ưu tiên bộ `En-us-<từ>.ogg` (giọng Mỹ), nếu không có thì Lingua Libre (giọng không xác định vùng). Backend tải một lần, giải mã sang WAV, lưu trong `backend/cache/` và app lưu trong Caches. Thẻ từ hiện tên người ghi âm, giấy phép (thường là CC BY-SA) và đường dẫn tới file gốc. Đo trên 96 trong 144 từ có sẵn: 77 có giọng Mỹ, 18 chỉ có Lingua Libre, 1 không có. Cụm từ, câu và từ không có bản ghi dùng giọng đọc của iOS. Backend gửi User-Agent có tên app và địa chỉ liên hệ theo chính sách của Wikimedia. Trước đây User-Agent mặc định bị trả 429 và backend chờ rồi thử lại, nên app đợi tới hàng chục giây mới phát được một từ. Giờ gặp 429 thì backend trả 503 ngay và tạm ngừng hỏi Commons trong thời gian `Retry-After`. App luôn phát ngay (bản ghi nếu đã có, không thì giọng iOS) và tải trước bản ghi của các từ trong bài ở nền. Đo trên VPS: lần đầu 0,4–2 giây mỗi từ, đã lưu thì khoảng 10 ms.
+- Giọng đọc trong bài tập, câu hỏi và câu: **luôn cùng một giọng iOS chuẩn** (giọng Mỹ thường, chất lượng cao nhất máy có, ưu tiên Samantha). iOS còn liệt kê dưới en-US 15 giọng "vui" (Bubbles, Whisper, Zarvox…, Apple đánh dấu `isNoveltyVoice`), các giọng máy đời cũ (Fred, Junior, Kathy, Ralph, bộ Eloquence) và giọng Siri; app loại hết. Trước đây câu hỏi nghe chọn ngẫu nhiên trong mọi giọng en-US, nên trên simulator 19/20 lần ra giọng lạ. Bài tập cũng không dùng bản ghi người thật: mỗi từ do một người khác đọc, chất lượng khác nhau, và trong một cặp âm, khác giọng giữa hai từ đã là manh mối để đoán.
+- Bản ghi người thật chỉ có trên **thẻ từ**, kèm tên người đọc: bộ `En-us-<từ>.ogg` (giọng Mỹ) trên Wikimedia Commons. Không dùng Lingua Libre vì người đọc không ghi rõ giọng vùng nào; bản Lingua Libre đã lưu từ phiên bản cũ bị bỏ qua ở cả backend lẫn app. Backend tải một lần, giải mã sang WAV, lưu trong `backend/cache/` và app lưu trong Caches. Đo trên 96 trong 144 từ có sẵn: 77 có giọng Mỹ; số còn lại dùng giọng iOS chuẩn. Backend gửi User-Agent có tên app và địa chỉ liên hệ theo chính sách của Wikimedia. Trước đây User-Agent mặc định bị trả 429 và backend chờ rồi thử lại, nên app đợi tới hàng chục giây mới phát được một từ. Giờ gặp 429 thì backend trả 503 ngay và tạm ngừng hỏi Commons trong thời gian `Retry-After`. App luôn phát ngay (bản ghi nếu đã có, không thì giọng iOS chuẩn) và tải trước bản ghi của các từ trong bài ở nền. Đo trên VPS: lần đầu 0,4–2 giây mỗi từ, đã lưu thì khoảng 10 ms.
 - Âm IPA đơn lẻ: giọng đọc của iOS. Muốn có âm IPA đơn lẻ chuẩn hơn, đặt file `phoneme_<ID>.m4a` (ví dụ `phoneme_TH.m4a`) vào `ios/OpenSpeak/Resources/` và app sẽ ưu tiên dùng file này. Bộ audio IPA trên Wikimedia Commons phần lớn là CC BY-SA hoặc public domain; cần kiểm tra giấy phép và ghi công từng file.
 - Dữ liệu và mô hình:
   - CMUdict: giấy phép kiểu BSD.

@@ -54,15 +54,26 @@ def test_us_recording_is_decoded_trimmed_and_cached(tmp_path):
     assert len(fake.calls) == calls
 
 
-def test_falls_back_to_lingua_libre_then_caches_misses(tmp_path):
+def test_lingua_libre_is_not_used_and_misses_are_cached(tmp_path):
+    """Lingua Libre speakers' accents are unstated; only the US series is a model voice."""
     fake = FakeCommons()
     audio = WordAudio(http_get=fake, cache_dir=tmp_path)
-    rec = audio.get("deadline")[1]
-    assert rec.accent == "unspecified" and rec.artist == "Ví dụ"
-    assert audio.get("postpone") is None
+    assert audio.get("deadline") is None
+    assert not any("list=search" in url for url in fake.calls)
     calls = len(fake.calls)
+    assert audio.get("deadline") is None and audio.get("postpone") is None
     assert audio.get("postpone") is None
-    assert len(fake.calls) == calls
+    assert len(fake.calls) == calls + 1
+
+
+def test_cached_recording_of_unknown_accent_is_ignored(tmp_path):
+    (tmp_path / "deadline.wav").write_bytes(b"RIFF")
+    (tmp_path / "deadline.json").write_text(json.dumps({
+        "word": "deadline", "title": "File:LL-Q1860 (eng)-Someone-deadline.wav", "page": "p",
+        "license": "CC BY-SA 4.0", "artist": "Someone", "accent": "unspecified"}))
+    fake = FakeCommons()
+    assert WordAudio(http_get=fake, cache_dir=tmp_path).get("deadline") is None
+    assert fake.calls == []
 
 
 def test_endpoint_returns_wav_with_attribution(tmp_path, monkeypatch):

@@ -1,8 +1,8 @@
 """Human recordings of single words from Wikimedia Commons (CC BY-SA etc.).
 
-Prefers the US-English series "En-us-<word>.ogg"; falls back to Lingua Libre
-("LL-Q1860 (eng)-<speaker>-<word>.wav"), whose speakers' accents vary. Files are
-decoded here because iOS cannot play Ogg Vorbis, then cached on disk as WAV with
+Only the US-English series "En-us-<word>.ogg" is used. Lingua Libre recordings
+("LL-Q1860 (eng)-<speaker>-<word>.wav") are not: their speakers' accents are not stated
+and vary, which is no model to learn from. Files are decoded here because iOS cannot play Ogg Vorbis, then cached on disk as WAV with
 their attribution, which every response must carry.
 """
 from __future__ import annotations
@@ -47,7 +47,7 @@ class Recording:
     page: str           # Commons description page (attribution link)
     license: str
     artist: str
-    accent: str         # "en-US" or "unspecified"
+    accent: str         # "en-US"
 
 
 def _http_get(url: str) -> bytes:
@@ -90,15 +90,6 @@ class WordAudio:
             return None
         return info["url"].split("?")[0], info.get("extmetadata", {})
 
-    def _lingua_libre_title(self, word: str) -> Optional[str]:
-        data = self._api(action="query", list="search", srnamespace=6, srlimit=20,
-                         srsearch=f'intitle:"LL-Q1860 (eng)" intitle:"{word}"')
-        suffix = f"-{word}.wav".lower()
-        for hit in data.get("query", {}).get("search", []):
-            if hit["title"].lower().endswith(suffix):
-                return hit["title"]
-        return None
-
     def find(self, word: str) -> Optional[Tuple[str, Recording]]:
         """Returns (download URL, attribution) or None when Commons has no recording."""
         candidates = [(f"File:En-us-{word}.ogg", "en-US")]
@@ -108,11 +99,6 @@ class WordAudio:
             found = self._file_info(title)
             if found:
                 return found[0], self._recording(word, title, found[1], accent)
-        title = self._lingua_libre_title(word)
-        if title:
-            found = self._file_info(title)
-            if found:
-                return found[0], self._recording(word, title, found[1], "unspecified")
         return None
 
     @staticmethod
@@ -134,7 +120,7 @@ class WordAudio:
         meta_path = self.cache_dir / f"{key}.json"
         if meta_path.exists():
             meta = json.loads(meta_path.read_text())
-            if meta is None:
+            if meta is None or meta.get("accent") != "en-US":
                 return None
             if wav_path.exists():
                 return wav_path.read_bytes(), Recording(**meta)

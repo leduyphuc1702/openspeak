@@ -19,10 +19,9 @@ struct WordAudioCredit: Codable, Hashable {
     let accent: String
 
     var line: String {
-        let who = accent == "en-US" ? "Giọng Mỹ thật" : "Giọng người thật"
         // Non-breaking space and hyphen: a licence name such as "CC BY-SA 4.0" must not be split across lines.
         let licence = license.replacingOccurrences(of: " ", with: "\u{00A0}").replacingOccurrences(of: "-", with: "\u{2011}")
-        return "\(who): \(artist)\n\(licence) · Wikimedia\u{00A0}Commons"
+        return "Giọng Mỹ thật: \(artist)\n\(licence) · Wikimedia\u{00A0}Commons"
     }
 }
 
@@ -41,11 +40,19 @@ enum WordAudioCache {
     private static func creditURL(_ key: String) -> URL { directory.appendingPathComponent("\(key).json") }
     private static func missURL(_ key: String) -> URL { directory.appendingPathComponent("\(key).miss") }
 
-    static func has(_ key: String) -> Bool { FileManager.default.fileExists(atPath: audioURL(key).path) }
+    /// A US recording is on disk. Recordings of unknown accent, cached by older versions, do not count.
+    static func has(_ key: String) -> Bool {
+        FileManager.default.fileExists(atPath: audioURL(key).path) && storedCredit(key)?.accent == "en-US"
+    }
     static func isMissing(_ key: String) -> Bool { FileManager.default.fileExists(atPath: missURL(key).path) }
 
     static func credit(for word: String) -> WordAudioCredit? {
-        guard let key = key(word), let data = try? Data(contentsOf: creditURL(key)) else { return nil }
+        guard let key = key(word), has(key) else { return nil }
+        return storedCredit(key)
+    }
+
+    private static func storedCredit(_ key: String) -> WordAudioCredit? {
+        guard let data = try? Data(contentsOf: creditURL(key)) else { return nil }
         return try? JSONDecoder().decode(WordAudioCredit.self, from: data)
     }
 
@@ -108,36 +115,53 @@ actor WordAudioPrefetcher {
     }
 }
 
-/// Plays model pronunciations at once. A single word uses a real person's recording from Wikimedia
-/// Commons if one is already downloaded, otherwise the on-device voice while the recording downloads
-/// for next time; bundled `phoneme_<ID>.(m4a|mp3|wav)` files take priority for isolated sounds.
+/// Plays model pronunciations at once, always in the same standard US voice. Only a word card plays a
+/// real person's recording from Wikimedia Commons (with its credit on screen); exercises never do,
+/// because recordings differ in speaker and quality, and in a minimal pair the voice would give the
+/// answer away. Bundled `phoneme_<ID>.(m4a|mp3|wav)` files take priority for isolated sounds.
 @MainActor
 final class SpeechPlayer {
     static let shared = SpeechPlayer()
 
     private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
-    private let voice = AVSpeechSynthesisVoice(language: "en-US")
-    /// Every installed US English voice, for listening drills that should not hinge on one speaker.
-    private lazy var voices: [AVSpeechSynthesisVoice] = {
-        let all = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
-        return all.isEmpty ? [voice].compactMap { $0 } : all
-    }()
+    private let voice = SpeechPlayer.standardVoice()
 
-    /// `varied` picks a random speaker (the recording or any US voice), as in high-variability
-    /// perception training, so the learner learns the sound rather than one voice's version of it.
-    func speak(_ text: String, slow: Bool = false, varied: Bool = false) {
-        stop()
-        guard let key = WordAudioCache.key(text) else { return tts(text, slow: slow, varied: varied) }
-        let human = WordAudioCache.has(key)
-        if human, !varied || Int.random(in: 0...voices.count) == 0, playRecording(key, slow: slow) { return }
-        tts(text, slow: slow, varied: varied)
-        if !human { WordAudioCache.prefetch([key]) }
+    /// The best installed ordinary US voice. iOS also lists novelty voices (Bubbles, Whisper, Zarvox…)
+    /// and old robotic ones (Fred, Ralph, the Eloquence set) under en-US; none of them is a model.
+    /// Siri voices are left out too: other apps may get silence from them.
+    static func standardVoice() -> AVSpeechSynthesisVoice? {
+        let standard = AVSpeechSynthesisVoice.speechVoices().filter { v in
+            v.language == "en-US"
+                && !v.voiceTraits.contains(.isNoveltyVoice) && !v.voiceTraits.contains(.isPersonalVoice)
+                && !v.identifier.contains("speech.synthesis") && !v.identifier.contains("eloquence")
+                && !v.identifier.contains("siri")
+        }
+        let best = standard.max { a, b in
+            if a.quality != b.quality { return a.quality.rawValue < b.quality.rawValue }
+            if (a.name == "Samantha") != (b.name == "Samantha") { return b.name == "Samantha" }
+            return a.identifier > b.identifier
+        }
+        return best ?? AVSpeechSynthesisVoice(language: "en-US")
     }
 
-    private func tts(_ text: String, slow: Bool, varied: Bool = false) {
+    func speak(_ text: String, slow: Bool = false) {
+        stop()
+        tts(text, slow: slow)
+    }
+
+    /// A word card: the US recording if it is downloaded, otherwise the standard voice while it downloads.
+    func speakRecording(_ word: String, slow: Bool = false) {
+        stop()
+        guard let key = WordAudioCache.key(word) else { return tts(word, slow: slow) }
+        if WordAudioCache.has(key), playRecording(key, slow: slow) { return }
+        tts(word, slow: slow)
+        WordAudioCache.prefetch([key])
+    }
+
+    private func tts(_ text: String, slow: Bool) {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = varied ? voices.randomElement() : voice
+        utterance.voice = voice
         utterance.rate = slow ? 0.32 : 0.45
         synthesizer.speak(utterance)
     }

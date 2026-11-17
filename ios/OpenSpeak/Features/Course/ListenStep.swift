@@ -48,7 +48,6 @@ struct ListenStep: View {
                 }
             }
         }
-        .onAppear { WordAudioCache.prefetch(questions.flatMap(\.words)) }
     }
 
     private func header(_ index: Int) -> some View {
@@ -190,7 +189,7 @@ private struct ExerciseView: View {
     private var sequence: some View {
         Text("Nghe 3 lần đọc, đánh dấu mỗi lần là từ nào").font(.headline).multilineTextAlignment(.center)
         SpeakerButton(label: "Nghe lại cả 3 lần", action: playSequence)
-        Text("Mỗi lần có thể là một giọng khác. Cả hai từ đều xuất hiện ít nhất một lần.")
+        Text("Cả hai từ đều xuất hiện ít nhất một lần.")
             .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
         VStack(spacing: 10) {
             ForEach(Array((question.order ?? []).enumerated()), id: \.offset) { slot, truth in
@@ -237,7 +236,7 @@ private struct ExerciseView: View {
             for (slot, word) in words.enumerated() {
                 guard !Task.isCancelled else { return }
                 playing = slot
-                SpeechPlayer.shared.speak(word, varied: true)
+                SpeechPlayer.shared.speak(word)
                 try? await Task.sleep(for: .milliseconds(1400))
             }
             playing = nil
@@ -248,7 +247,7 @@ private struct ExerciseView: View {
         guard let truth = question.order?[safe: slot] else { return }
         playback?.cancel()
         playing = slot
-        SpeechPlayer.shared.speak(question.options[truth].word, varied: true)
+        SpeechPlayer.shared.speak(question.options[truth].word)
         playback = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(1200))
             if !Task.isCancelled { playing = nil }

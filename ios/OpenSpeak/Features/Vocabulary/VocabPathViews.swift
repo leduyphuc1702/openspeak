@@ -438,7 +438,7 @@ struct VocabPathLessonView: View {
         }
         let fresh = Set(lesson?.words.map(\.id) ?? [])
         warmup = Array(progress.dueWords().filter { !fresh.contains($0.id) }.shuffled().prefix(4))
-        WordAudioCache.prefetch((lesson?.words ?? []).map(\.word) + warmup.map(\.word))
+        WordAudioCache.prefetch((lesson?.words ?? []).map(\.word))
         phase = .intro
     }
 
@@ -495,7 +495,7 @@ struct VocabPathLessonView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
         }
-        .onAppear { SpeechPlayer.shared.speak(word.word) }
+        .onAppear { SpeechPlayer.shared.speakRecording(word.word) }
     }
 
     private func done(_ lesson: VocabPathLesson) -> some View {
